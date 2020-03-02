@@ -1,10 +1,7 @@
 // @nearfile
+import { context, storage, logging } from "near-runtime-ts";
+import { PostedMessage, Thread, LARGEST_MESSAGE_KEY, getChannel } from './model';
 
-import { context, storage, logging, PersistentVector } from "near-runtime-ts";
-
-import { PostedMessage, Thread } from "./model";
-
-const LARGEST_MESSAGE_KEY = "LARGEST_MESSAGE_KEY";
 
 export function addMessage(channel: string, thread_id: u64, text: string): void {
   let msg_id = storage.getPrimitive<u64>(LARGEST_MESSAGE_KEY, 0);
@@ -15,35 +12,23 @@ export function addMessage(channel: string, thread_id: u64, text: string): void 
     thread_id = msg_id;
   }
 
-  let message: PostedMessage = {
-    message_id: msg_id,
-    sender: context.sender,
-    text: text,
-    thread_id: thread_id,
-    channel: channel,
-  };
+  let message = new PostedMessage(msg_id, context.sender, text, thread_id, channel);
+  let thread  = new Thread(channel, thread_id, text);
 
-  let thread: Thread = {
-    channel,
-    thread_id,
-    name: text,
-  };
+  // let key = "MSG6$" + channel + "$" + thread_id.toString() + "$" + msg_id.toString();
+  logging.log("Saving message. Key: " + message.key + ", text: " + text);
+  storage.set(message.key, message);
 
-  let key = "MSG6$" + channel + "$" + thread_id.toString() + "$" + msg_id.toString();
-  logging.log("Saving message. Key: " + key + ", text: " + text);
-  storage.set(key, message);
-
-  let tkey = "THR6$" + msg_id.toString();
-  logging.log("Saving thread title. Key: " + tkey + ", text: " + text);
-  storage.set(tkey, thread);
+  // let tkey = "THR6$" + msg_id.toString();
+  logging.log("Saving thread title. Key: " + message.threadKey + ", text: " + text);
+  storage.set(message.threadKey, thread);
 }
 
 export function getMessagesForThread(channel: string, thread_id: u64): Array<PostedMessage> {
   let ret = new Array<PostedMessage>();
-  let key_prefix = "MSG6$" + channel + "$" + thread_id.toString() + "$";
-  let keys = storage.keys(key_prefix);
+  let keys = storage.keys(PostedMessage.message_prefix(channel, thread_id));
   
-  for (let i = 0; i < keys.length; ++ i) {
+  for (let i = 0; i < keys.length; ++i) {
     let posted_message = storage.getSome<PostedMessage>(keys[i]);
     ret.push(posted_message);
   }
@@ -52,12 +37,11 @@ export function getMessagesForThread(channel: string, thread_id: u64): Array<Pos
 
 export function getMessagesForChannel(channel: string): Array<PostedMessage> {
   let ret = new Array<PostedMessage>();
-  let key_prefix = "MSG6$";
-  let keys = storage.keys(key_prefix);
+  let keys = PostedMessage.keys;
   
   for (let i = 0; i < keys.length; ++ i) {
-    let posted_message = storage.getSome<PostedMessage>(keys[i]);
-    if (posted_message.channel == channel) {
+    if (getChannel(keys[i])) {
+      let posted_message = storage.getSome<PostedMessage>(keys[i]);
       ret.push(posted_message);
     }
   }
@@ -66,8 +50,7 @@ export function getMessagesForChannel(channel: string): Array<PostedMessage> {
 
 export function getAllMessages(): Array<PostedMessage> {
   let ret = new Array<PostedMessage>();
-  let key_prefix = "MSG6$";
-  let keys = storage.keys(key_prefix);
+  let keys = PostedMessage.keys;
   
   for (let i = 0; i < keys.length; ++ i) {
     let posted_message = storage.getSome<PostedMessage>(keys[i]);
@@ -77,27 +60,25 @@ export function getAllMessages(): Array<PostedMessage> {
 }
 
 export function getThreadName(thread_id: u64): String {
-  let tkey = "THR6$" + thread_id.toString();
+  let tkey = Thread.prefix(thread_id);
   logging.log("Fetching thread title. Key: " + tkey);
   return storage.getSome<Thread>(tkey).name;
 }
 
 export function setThreadName(channel: string, thread_id: u64, name: string): void {
-  let tkey = "THR6$" + thread_id.toString();
+  let thread = new Thread(channel, thread_id, '!' + name);
+  const tkey = thread.key
   logging.log("Saving thread title. Key: " + tkey);
-  let thread: Thread = { channel, thread_id, name: '!' + name };
   storage.set(tkey, thread);
 }
 
 export function getAllThreads(): Array<Thread> {
   let ret = new Array<Thread>();
-
-  let tkey = "THR6$";
-  let keys = storage.keys(tkey);
+  let keys = Thread.keys;
 
   for (let i = 0; i < keys.length; ++ i) {
     let thread = storage.getSome<Thread>(keys[i]);
-    if (thread.name.length > 0 && thread.name[0] == '!') {
+    if (thread.name.length > 0 && thread.name.startsWith('!')) {
       ret.push(thread);
     }
   }

@@ -1,32 +1,26 @@
 {
-  "name": "@wasm/nearchat",
-  "description": "",
+  "name": "near-chat",
+  "description": "NEAR Chat with channels and threads",
   "version": "0.0.1",
   "scripts": {
-    "build": "mkdir -p out/ && gulp",
+    "build": "node asconfig.js",
     "deploy:contract": "near deploy",
     "deploy:pages": "gh-pages -d src",
     "deploy": "npm run build && npm run deploy:contract && npm run deploy:pages",
     "prestart": "npm run build && npm run deploy:contract",
     "start": "serve src",
-    "test": "npm run build && jest test --env=near-shell/test_environment"
-  },
-  "dependencies": {
-    "near-bindgen-as": "^1.1.1",
-    "near-runtime-ts": "^0.5.1"
+    "jest": "npm run build && jest test --env=near-shell/test_environment",
+    "asp:ci": "asp",
+    "asp": "asp --verbose",
+    "test": "yarn jest && yarn asp:ci"
   },
   "devDependencies": {
-    "assemblyscript": "^0.8.1",
+    "assemblyscript": "^0.9.2",
     "gh-pages": "^2.1.1",
-    "gulp": "^4.0.2",
     "jest": "^24.8.0",
     "jest-environment-node": "^24.8.0",
+    "near-as-sdk": "^0.1.0",
     "near-shell": "^0.18.0",
     "serve": "^11.1.0"
-  },
-  "wasmStudio": {
-    "name": "NEAR Chat",
-    "description": "NEAR Chat",
-    "icon": "typescript-lang-file-icon"
   }
 }
