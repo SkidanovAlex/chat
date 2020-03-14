@@ -1,5 +1,5 @@
 // @nearfile
-import { storage } from 'near-runtime-ts';
+import { storage } from 'near-sdk-as';
 
 export function getChannel(key: string): string {
   let first = key.indexOf("$");

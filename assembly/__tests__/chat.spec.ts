@@ -1,7 +1,7 @@
 import { LARGEST_MESSAGE_KEY, currID, THREAD_NAME_PREFIX } from '../model';
-import { storage } from "near-runtime-ts";
+import { storage } from "near-sdk-as";
 import { addMessage, getMessagesForThread, getMessagesForChannel, setThreadName, getThreadName, getAllMessages } from '../main';
-import { VM } from "wasm-mock-vm";
+import { VM } from "near-sdk-as";
 
 const general = "general";
 const firstMessage = "First Message";

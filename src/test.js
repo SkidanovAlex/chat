@@ -8,7 +8,7 @@ describe('Guestbook', function () {
     accountId = nearConfig.contractName;
     contract = await near.loadContract(nearConfig.contractName, {
       // NOTE: This configuration only needed while NEAR is still in development
-      viewMethods: ['getMessages'],
+      viewMethods: ['getAllMessages'],
       changeMethods: ['addMessage'],
       sender: accountId
     });
@@ -16,7 +16,7 @@ describe('Guestbook', function () {
 
   describe('Guestbook', function () {
     it('returns 0 messages in initial empty states', async function () {
-      const messages = await contract.getMessages({});
+      const messages = await contract.getAllMessages();
       expect(messages.length).toBe(0);
     });
   });

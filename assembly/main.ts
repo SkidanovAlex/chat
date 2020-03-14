@@ -1,5 +1,5 @@
 // @nearfile
-import { context, storage, logging } from "near-runtime-ts";
+import { context, storage, logging } from "near-sdk-as";
 import { PostedMessage, Thread, LARGEST_MESSAGE_KEY, getChannel } from './model';
 
 
