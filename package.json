@@ -18,7 +18,7 @@
     "assemblyscript": "^0.9.4",
     "gh-pages": "^2.1.1",
     "jest": "^24.8.0",
-    "jest-environment-node": "^24.8.0",
+    "jest-environment-node": "^25.2.6",
     "near-sdk-as": "^0.1.2",
     "near-shell": "^0.18.0",
     "serve": "^11.1.0"
