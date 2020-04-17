@@ -72,7 +72,8 @@ export function setThreadName(channel: string, thread_id: u64, name: string): vo
   let threads = new PersistentMap<u64, Thread>("threads");
   let allThreadIds = new PersistentVector<u64>("all_threads");
 
-  if (!threads.contains(thread_id)) {
+  let existingThread = threads.get(thread_id)!;
+  if (!existingThread.name.startsWith("!")) {
     allThreadIds.push(thread_id);
   }
   threads.set(thread_id, thread);
@@ -85,10 +86,7 @@ export function getAllThreads(): Array<Thread> {
   let ret = new Array<Thread>();
 
   for (let i = 0; i < allThreadIds.length; ++ i) {
-    let thread: Thread = threads.get(allThreadIds[i])!;
-    if (thread.name.length > 0 && thread.name.startsWith('!')) {
-      ret.push(thread);
-    }
+    ret.push(threads.get(allThreadIds[i])!);
   }
   return ret;
 }
