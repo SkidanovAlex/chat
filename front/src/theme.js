@@ -28,6 +28,8 @@ export const theme = ({
   mineshaftGray: '#E1E1E1',
   activeGray: '#292C2F',
   buttonOutlineGrey: '#FAFAFA',
+  annaGray: '#191A1C',
+  annaGray2: '#2E3338',
   tokenRowHover: '#404040',
 
   //blacks 
@@ -95,7 +97,6 @@ export const GlobalStyle = createGlobalStyle`
     font-size: 16px;
     font-variant: none;
     color: ${theme.textColor};
-    background-color: ${theme.backgroundColor};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
@@ -106,7 +107,7 @@ export const GlobalStyle = createGlobalStyle`
 export const Button = styled.button.attrs(({ warning }) => ({
   backgroundColor: warning ? theme.salmonRed : theme.royalBlue
 }))`
-  padding: 1rem 2rem 1rem 2rem;
+  padding: 0.5rem 1.5rem 0.5rem 1.5rem;
   border-radius: 3rem;
   cursor: pointer;
   user-select: none;
@@ -197,4 +198,21 @@ export const Text = styled.p`
   white-space: nowrap;
   margin: 0 0.5rem 0 0.25rem;
   font-size: 0.83rem;
+`
+
+export const LeftFrame = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 20%;
+  height: 100%;
+  min-width: 200px;
+`
+
+export const RightFrame = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 80%;
+  height: 100%;
 `

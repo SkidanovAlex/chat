@@ -2,10 +2,11 @@ import React from 'react'
 import styled, { css } from 'styled-components'
 import { darken } from 'polished'
 
-import { theme, Link, Button } from '../theme'
+import { theme, Link, Button, LeftFrame, RightFrame } from '../theme'
 import logo from '../logo_white.png';
 
 const HeaderFrame = styled.div`
+  background-color: ${theme.annaGray};
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -20,9 +21,34 @@ const HeaderElement = styled.div`
   align-items: center;
 `
 
+const Logo = styled.div`
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+
+  :hover {
+    cursor: pointer;
+  }
+
+  #link {
+    text-decoration-color: ${theme.UniswapPink};
+  }
+
+  #title {
+    display: inline;
+    font-size: 1rem;
+    font-weight: 500;
+    color: ${theme.wisteriaPurple};
+    :hover {
+      color: ${darken(0.1, theme.wisteriaPurple)};
+    }
+  }
+`
+
 const Title = styled.div`
   display: flex;
   align-items: center;
+  margin: 0.5rem;
 
   :hover {
     cursor: pointer;
@@ -93,25 +119,25 @@ const LogoFrame = styled.div`
 `
 
 const LogoElement = styled.div`
-  margin: 0.3rem;
+  margin-right: 0.4rem;
   display: flex;
   min-width: 0;
   display: flex;
   align-items: center;
 `
 
-export default function Header({connected, signedIn, app}) {
-  let status = !connected ? (
+export default function Header({app}) {
+  let status = !app.state.connected ? (
     <StatusConnect>Connecting...</StatusConnect>
-  ) : (signedIn ? (
+  ) : (app.state.signedIn ? (
     <StatusConnect>Hello {app.state.accountId}</StatusConnect>
   ) : (
-    <Button onClick={() => app.requestSignIn()}>Log in with NEAR Wallet</Button>
+    <Button onClick={() => app.requestSignIn()}>Login</Button>
   ));
   return (
     <HeaderFrame>
-      <HeaderElement>
-        <Title>
+      <LeftFrame>
+        <Logo>
           <Link id="link" href="https://nearprotocol.com">
             <LogoFrame>
               <LogoElement>
@@ -122,13 +148,17 @@ export default function Header({connected, signedIn, app}) {
               </LogoElement>
             </LogoFrame>
           </Link>
+        </Logo>
+      </LeftFrame>
+      <RightFrame>
+        <Title>
+          OLOLO
         </Title>
-      </HeaderElement>
-      <HeaderElement>
+        {/*<Button onClick={() => app.refreshMessages()}>Refresh</Button>*/}
         <Title>
           {status}
         </Title>
-      </HeaderElement>
+      </RightFrame>
     </HeaderFrame>
   )
 }
