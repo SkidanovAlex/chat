@@ -20,7 +20,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy:contract": "near deploy --wasmFile ../contract/out/main.wasm",
+    "deploy:contract": "near deploy --wasmFile ../contract/out/main.wasm --keyPath ../contract/neardev/default/studio-vvs2k3876.json",
     "deploy:pages": "gh-pages -d src",
     "deploy": "yarn run build && yarn run deploy:contract && yarn run deploy:pages"
   },
