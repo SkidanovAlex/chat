@@ -1,5 +1,4 @@
-import { LARGEST_MESSAGE_KEY, currID, THREAD_NAME_PREFIX } from '../model';
-import { storage } from "near-sdk-as";
+import { THREAD_NAME_PREFIX } from '../model';
 import { addMessage, getMessagesForThread, getMessagesForChannel, setThreadName, getThreadName, getAllMessages } from '../main';
 import { VM } from "near-sdk-as";
 
@@ -15,14 +14,8 @@ describe("Adding message", () => {
     log(VM.outcome().logs);
   });
 
-  it("initially be no messages", () => {
-    expect(currID()).toBe(0, "current key is zero");
-  });
-
   it("be able to add one", () => {
     addMessage(general, 0, firstMessage);
-
-    expect(currID()).toBe(1, "first message should have message id of 1");
 
     const fromThread = getMessagesForThread(general, 1);
     const fromChannel = getMessagesForChannel(general);
@@ -34,7 +27,6 @@ describe("Adding message", () => {
 
   it("have two messages without threads", () => {
     addMessage(general, 0, secondMessage);
-    expect(currID()).toBe(2, "second message has ID of 2");
 
     const fromThread = getMessagesForThread(general, 2);
     const fromChannel = getMessagesForChannel(general);

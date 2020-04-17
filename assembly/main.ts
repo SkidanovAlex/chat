@@ -1,12 +1,10 @@
 // @nearfile
-import { context, storage, logging } from "near-sdk-as";
-import { PostedMessage, Thread, LARGEST_MESSAGE_KEY, getChannel } from './model';
-
+import { context, logging, PersistentVector, PersistentMap } from "near-sdk-as";
+import { PostedMessage, Thread, getChannelCollectionName, getThreadCollectionName } from './model';
 
 export function addMessage(channel: string, thread_id: u64, text: string): void {
-  let msg_id = storage.getPrimitive<u64>(LARGEST_MESSAGE_KEY, 0);
-  msg_id = msg_id + 1;
-  storage.set(LARGEST_MESSAGE_KEY, msg_id);
+  let allMessages = new PersistentVector<PostedMessage>("messages");
+  let msg_id = allMessages.length;
 
   if (thread_id == 0) {
     thread_id = msg_id;
@@ -15,69 +13,79 @@ export function addMessage(channel: string, thread_id: u64, text: string): void 
   let message = new PostedMessage(msg_id, context.sender, text, thread_id, channel);
   let thread  = new Thread(channel, thread_id, text);
 
-  // let key = "MSG6$" + channel + "$" + thread_id.toString() + "$" + msg_id.toString();
-  logging.log("Saving message. Key: " + message.key + ", text: " + text);
-  storage.set(message.key, message);
+  allMessages.push(message);
 
-  // let tkey = "THR6$" + msg_id.toString();
-  logging.log("Saving thread title. Key: " + message.threadKey + ", text: " + text);
-  storage.set(message.threadKey, thread);
+  let threads = new PersistentMap<u64, Thread>("threads");
+  threads.set(thread_id, thread);
+
+  let channelMessageIds = new PersistentVector<u32>(getChannelCollectionName(channel));
+  channelMessageIds.push(msg_id);
+
+  let threadMessageIds = new PersistentVector<u32>(getThreadCollectionName(thread_id));
+  threadMessageIds.push(msg_id);
 }
 
 export function getMessagesForThread(channel: string, thread_id: u64): Array<PostedMessage> {
+  let allMessages = new PersistentVector<PostedMessage>("messages");
+  let threadMessageIds = new PersistentVector<u32>(getThreadCollectionName(thread_id));
+
   let ret = new Array<PostedMessage>();
-  let keys = storage.keys(PostedMessage.message_prefix(channel, thread_id));
   
-  for (let i = 0; i < keys.length; ++i) {
-    let posted_message = storage.getSome<PostedMessage>(keys[i]);
+  for (let i = 0; i < threadMessageIds.length; ++i) {
+    let posted_message = allMessages[threadMessageIds[i]];
     ret.push(posted_message);
   }
   return ret;
 }
 
 export function getMessagesForChannel(channel: string): Array<PostedMessage> {
-  let ret = new Array<PostedMessage>();
-  let keys = PostedMessage.keys;
-  
-  for (let i = 0; i < keys.length; ++ i) {
-    if (getChannel(keys[i])) {
-      let posted_message = storage.getSome<PostedMessage>(keys[i]);
-      ret.push(posted_message);
-    }
-  }
-  return ret;
-}
+  let allMessages = new PersistentVector<PostedMessage>("messages");
+  let channelMessageIds = new PersistentVector<u32>(getChannelCollectionName(channel));
 
-export function getAllMessages(): Array<PostedMessage> {
   let ret = new Array<PostedMessage>();
-  let keys = PostedMessage.keys;
   
-  for (let i = 0; i < keys.length; ++ i) {
-    let posted_message = storage.getSome<PostedMessage>(keys[i]);
+  for (let i = 0; i < channelMessageIds.length; ++i) {
+    let posted_message = allMessages[channelMessageIds[i]];
     ret.push(posted_message);
   }
   return ret;
 }
 
+export function getAllMessages(): Array<PostedMessage> {
+  let allMessages = new PersistentVector<PostedMessage>("messages");
+
+  let ret = new Array<PostedMessage>();
+  
+  for (let i = 0; i < allMessages.length; ++ i) {
+    ret.push(allMessages[i]);
+  }
+  return ret;
+}
+
 export function getThreadName(thread_id: u64): String {
-  let tkey = Thread.prefix(thread_id);
-  logging.log("Fetching thread title. Key: " + tkey);
-  return storage.getSome<Thread>(tkey).name;
+  let threads = new PersistentMap<u64, Thread>("threads");
+  return threads.get(thread_id)!.name;
 }
 
 export function setThreadName(channel: string, thread_id: u64, name: string): void {
   let thread = new Thread(channel, thread_id, '!' + name);
-  const tkey = thread.key
-  logging.log("Saving thread title. Key: " + tkey);
-  storage.set(tkey, thread);
+  let threads = new PersistentMap<u64, Thread>("threads");
+  let allThreadIds = new PersistentVector<u64>("all_threads");
+
+  if (!threads.contains(thread_id)) {
+    allThreadIds.push(thread_id);
+  }
+  threads.set(thread_id, thread);
 }
 
 export function getAllThreads(): Array<Thread> {
-  let ret = new Array<Thread>();
-  let keys = Thread.keys;
+  let threads = new PersistentMap<u64, Thread>("threads");
+  let allThreadIds = new PersistentVector<u64>("all_threads");
 
-  for (let i = 0; i < keys.length; ++ i) {
-    let thread = storage.getSome<Thread>(keys[i]);
+  let ret = new Array<Thread>();
+
+  for (let i = 0; i < allThreadIds.length; ++ i) {
+    let thread: Thread = threads.get(allThreadIds[i])!;
     if (thread.name.length > 0 && thread.name.startsWith('!')) {
       ret.push(thread);
     }
