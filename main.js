@@ -421,7 +421,7 @@ async function init() {
   // It also takes the Account ID which it would use for signing transactions.
   contract = await near.loadContract(nearConfig.contractName, {
     viewMethods: ['getMessagesForThread', 'getAllMessages', 'getThreadName', 'getMessagesForChannel', 'getAllThreads'],
-    changeMethods: ['addMessage', 'setThreadName'],
+    changeMethods: ['addMessage', 'setThreadName', 'addContact'],
     sender: window.accountId,
   });
 
