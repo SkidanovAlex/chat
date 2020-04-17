@@ -1,6 +1,11 @@
 import React from 'react';
+import styled from "styled-components";
+
 import * as nearlib from 'nearlib';
 import * as nacl from "tweetnacl";
+
+import { theme } from './theme';
+import Header from './components/header';
 
 const MinAccountIdLen = 2;
 const MaxAccountIdLen = 64;
@@ -9,6 +14,35 @@ const ValidAccountRe = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
 const appTitle = 'NEAR Guest Book';
 const ContractName = 'studio-vvs2k3876';
 
+const AppWrapper = styled.div`
+  display: flex;
+  flex-flow: column;
+  align-items: flex-start;
+  height: 100vh;
+`
+
+const HeaderWrapper = styled.div`
+  ${theme.flexRowNoWrap}
+  width: 100%;
+  justify-content: space-between;
+`
+
+const BodyWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  justify-content: flex-start;
+  align-items: center;
+  flex: 1;
+  overflow: auto;
+`
+
+const FooterWrapper = styled.div`
+  width: 100%;
+  min-height: 30px;
+  align-self: flex-end;
+`
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -16,7 +50,6 @@ class App extends React.Component {
     this.state = {
       connected: false,
       signedIn: false,
-      calling: false,
       accountId: null,
       receiverId: "",
       receiversKey: null,
@@ -80,8 +113,9 @@ class App extends React.Component {
 
     if (!!this._accountId) {
       this._contract = await this._near.loadContract(this._nearConfig.contractName, {
-        viewMethods: ['get_key', 'get_request', 'get_response'],
-        changeMethods: ['set_key', 'request', 'respond'],
+        viewMethods: ['getMessagesForThread', 'getAllMessages', 'getThreadName', 'getMessagesForChannel', 'getAllThreads', 'getKey'],
+        changeMethods: ['addMessage', 'setThreadName', 'setKey'],
+        sender: this._accountId,
       });
       await this._updateEncryptionPublicKey();
     }
@@ -181,22 +215,18 @@ class App extends React.Component {
   }
 
   render() {
-    const content = !this.state.connected ? (
-        <div>Connecting... </div>
-    ) : (this.state.signedIn ? (
-      <>
-      </>
-    ) : (
-        <div>
-          <button
-              onClick={() => this.requestSignIn()}>Log in with NEAR Wallet</button>
-        </div>
-    ));
     return (
-        <div>
-          <h1>NEAR Chat!</h1>
-          {content}
-        </div>
+        <AppWrapper>
+          <HeaderWrapper>
+            <Header connected={this.state.connected} signedIn={this.state.signedIn} app={this}/>
+          </HeaderWrapper>
+          <BodyWrapper>
+            {/*<Body />*/}
+          </BodyWrapper>
+          <FooterWrapper>
+            {/*<Footer />*/}
+          </FooterWrapper>
+        </AppWrapper>
     );
   }
 }
