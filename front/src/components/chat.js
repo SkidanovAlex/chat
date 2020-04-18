@@ -32,6 +32,7 @@ export const RightFrame = styled.div`
   justify-content: space-between;
   width: 80%;
   height: 100%;
+  overflow-x: hidden;
   overflow-y: auto;
 `
 
@@ -41,7 +42,7 @@ export default function Chat(app) {
       <LeftFrame>
         <Sources app={app}/>
       </LeftFrame>
-      <RightFrame>
+      <RightFrame id="messages_frame">
         <Messages app={app}/>
       </RightFrame>
     </ChatFrame>

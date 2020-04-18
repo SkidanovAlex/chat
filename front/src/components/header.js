@@ -139,7 +139,7 @@ export default function Header({app}) {
   ) : (!window.threadId ? (
     <Title>{window.channel}</Title>
   ) : (
-    <Title>{window.channel} >> {window.threads.get(window.threadId).name}</Title>
+    <Title>{window.channel} » {window.threads.get(window.threadId).name}</Title>
   ))
   return (
     <HeaderFrame id="header">

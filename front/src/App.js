@@ -282,6 +282,9 @@ class App extends React.Component {
         Messages(this),
         document.getElementById('messages')
       );
+      console.log('HERE000');
+      var element = document.getElementById('messages_frame');
+      element.scrollTo(0,9999);
     } else {
       let promise;
       if (window.threadId !== 0) {
@@ -306,6 +309,8 @@ class App extends React.Component {
           Messages(this),
           document.getElementById('messages')
         );
+        var element = document.getElementById('messages_frame');
+        element.scrollTo(0,9999);
       })
       .catch(console.log);
     }

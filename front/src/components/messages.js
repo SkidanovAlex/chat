@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { darken } from 'polished'
 
@@ -44,8 +44,6 @@ const Thread = styled.div`
   font-size: 0.67rem;
 `
 
-
-
 function Message({text, sender, channel, showChannel, thread}) {
   const channelRendered = showChannel ? (<Channel>{channel}</Channel>) : (null);
   return (
@@ -64,6 +62,7 @@ export default function Messages(app) {
   const messages = window.messages;
   const channel = window.channel;
   console.log(messages)
+
   return (
     <MessagesWrapper id="messages">
       {messages.map(msg => (
