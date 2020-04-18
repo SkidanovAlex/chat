@@ -4,7 +4,7 @@ import { darken } from 'polished'
 
 import { Button, Input, theme } from "../theme";
 
-const ChannelsFrame = styled.div`
+const SourcesFrame = styled.div`
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
@@ -12,14 +12,14 @@ const ChannelsFrame = styled.div`
   width: 100%;
 `
 
-const ChannelHeader = styled.div`
+const SourceName = styled.div`
   display: flex;
   margin: 0.5rem;
   font-weight: 500;
   font-size: 18;
 
   :hover {
-    cursor: pointer;
+    cursor: default;
   }
 `
 
@@ -40,26 +40,27 @@ const Rule = styled.div`
   border: 0.5px solid ${theme.tokenRowHover};
 `
 
-export default function Channels({app}) {
+export default function Sources({app}) {
   let channels = ['General', 'Staking', 'DevX'];
+  let threads = ['General', 'Staking', 'DevX'];
   return (
-    <ChannelsFrame>
-      <Channel key="" onClick={() => app.updateChannel(null)}>All messages</Channel>
+    <SourcesFrame>
+      <Channel key="" onClick={() => app.updateChannelThread(null, 0)}>All messages</Channel>
       <Rule/>
-      <ChannelHeader>Channels</ChannelHeader>
+      <SourceName>Channels</SourceName>
       {channels.map(channel => (
-        <Channel key={channel} onClick={() => app.updateChannel(channel)}>{channel}</Channel>
+        <Channel key={channel} onClick={() => app.updateChannelThread(channel, 0)}>{channel}</Channel>
       ))}
       <Rule/>
-      <ChannelHeader>Threads</ChannelHeader>
-      {channels.map(channel => (
-        <Channel key={channel} onClick={() => app.updateChannel(channel)}>{channel}</Channel>
+      <SourceName>Threads</SourceName>
+      {threads.map(channel => (
+        <Channel key={channel} onClick={() => app.updateChannelThread(channel, 0)}>{channel}</Channel>
       ))}
       <Rule/>
-      <ChannelHeader>Private</ChannelHeader>
+      <SourceName>Private</SourceName>
       {channels.map(channel => (
-        <Channel key={channel} onClick={() => app.updateChannel(channel)}>{channel}</Channel>
+        <Channel key={channel} onClick={() => app.reloadData(channel)}>{channel}</Channel>
       ))}
-    </ChannelsFrame>
+    </SourcesFrame>
   )
 }

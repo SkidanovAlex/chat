@@ -128,7 +128,7 @@ class App extends React.Component {
       signedIn: !!this._accountId,
       accountId: this._accountId,
     })
-    this.refreshMessages();
+    this.reloadData();
   }
 
   handleChange(key, value) {
@@ -298,15 +298,6 @@ class App extends React.Component {
       promise.then(messages => {
         console.log(messages);
         window.messages = messages;
-        messages.forEach(msg => {
-          if (!window.threads.get(msg.thread_id)) {
-            let promise;
-            promise = this._contract.getThreadName({thread_id: msg.thread_id.toString()})
-            promise.then(value => {
-              window.threads.set(msg.thread_id, value)
-            })
-          }
-        })
         console.log(window.threads);
         ReactDOM.render(
           Messages(this),
@@ -317,11 +308,24 @@ class App extends React.Component {
     }
   }
 
-  updateChannel(channel) {
+  updateChannelThread(channel, threadId) {
     console.log(channel);
     window.channel = channel;
+    window.threadId = threadId;
     window.pendingMsg = null;
-    this.refreshMessages();
+    this.reloadData();
+  }
+
+  reloadData() {
+    this._contract.getAllThreads({}).then(threads => {
+      threads.forEach(thread => {
+        if (!window.threads.get(thread.thread_id)) {
+          window.threads.set(thread.thread_id, thread.name)
+        }
+      })
+      console.log(threads);
+      this.refreshMessages();
+    });
   }
 
   render() {

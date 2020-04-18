@@ -2,7 +2,7 @@ import React from 'react'
 import styled from 'styled-components'
 import { darken } from 'polished'
 
-import Channels from './channels';
+import Sources from './sources';
 import Messages from './messages';
 import { theme, Button } from '../theme';
 
@@ -36,7 +36,7 @@ export default function Sender({app}) {
   return (
     <ChatFrame>
       <LeftFrame>
-        <Channels app={app}/>
+        <Sources app={app}/>
       </LeftFrame>
       <RightFrame>
         <div id="messages">
