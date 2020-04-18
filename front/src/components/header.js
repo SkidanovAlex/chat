@@ -134,8 +134,15 @@ export default function Header({app}) {
   ) : (
     <Button onClick={() => app.requestSignIn()}>Login</Button>
   ));
+  let location = !window.channel ? (
+    <Title>All messages</Title>
+  ) : (!window.threadId ? (
+    <Title>{window.channel}</Title>
+  ) : (
+    <Title>{window.channel} >> {window.threads.get(window.threadId).name}</Title>
+  ))
   return (
-    <HeaderFrame>
+    <HeaderFrame id="header">
       <LeftFrame>
         <Logo>
           <Link id="link" href="https://nearprotocol.com">
@@ -151,10 +158,7 @@ export default function Header({app}) {
         </Logo>
       </LeftFrame>
       <RightFrame>
-        <Title>
-          OLOLO
-        </Title>
-        {/*<Button onClick={() => app.refreshMessages()}>Refresh</Button>*/}
+        {location}
         <Title>
           {status}
         </Title>

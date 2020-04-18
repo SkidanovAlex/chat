@@ -57,7 +57,7 @@ function Message({text, sender, channel, showChannel, thread}) {
       <MessageHeader>
         <Sender>{sender}</Sender>
         {channelRendered}
-        <Thread>{thread != null ? (thread) : (null)}</Thread>
+        <Thread>{thread != null ? (thread.name) : (null)}</Thread>
       </MessageHeader>
       <Text>{text}</Text>
     </MessageWrapper>

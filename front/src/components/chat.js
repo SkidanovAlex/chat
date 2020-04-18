@@ -32,7 +32,7 @@ export const RightFrame = styled.div`
   height: 100%;
 `
 
-export default function Sender(app) {
+export default function Chat(app) {
   return (
     <ChatFrame>
       <LeftFrame>

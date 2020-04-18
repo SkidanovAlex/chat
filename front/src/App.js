@@ -324,16 +324,25 @@ class App extends React.Component {
     );    
   }
 
+  refreshHeader() {
+    ReactDOM.render(
+      Header({app: this}),
+      document.getElementById('header')
+    );    
+  }
+
+
   reloadData() {
     this._contract.getAllThreads({}).then(threads => {
       threads.forEach(thread => {
         if (!window.threads.get(thread.thread_id)) {
-          window.threads.set(thread.thread_id, thread.name)
+          window.threads.set(thread.thread_id, thread)
         }
       })
       console.log(threads);
       this.refreshMessages();
       this.refreshSources();
+      this.refreshHeader();
     });
   }
 

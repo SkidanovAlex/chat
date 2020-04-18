@@ -44,8 +44,7 @@ export default function Sources(app) {
   let channels = ['General', 'Staking', 'DevX'];
   let threads = [];
   for (const [key, value] of window.threads.entries()) {
-    threads.push({id: key, name: value})
-    console.log("AAAAAAAAAA", key, value);
+    threads.push(value)
   }
   console.log(threads);
   return (
@@ -59,7 +58,7 @@ export default function Sources(app) {
       <Rule/>
       <SourceName>Threads</SourceName>
       {threads.map(thread => (
-        <Channel key={thread.id} onClick={() => app.updateChannelThread(window.channel, thread.id)}>{thread.name}</Channel>
+        <Channel key={thread.thread_id} onClick={() => app.updateChannelThread(thread.channel, thread.thread_id)}>{thread.name}</Channel>
       ))}
       <Rule/>
       <SourceName>Private</SourceName>
