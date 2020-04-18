@@ -32,16 +32,14 @@ export const RightFrame = styled.div`
   height: 100%;
 `
 
-export default function Sender({app}) {
+export default function Sender(app) {
   return (
     <ChatFrame>
       <LeftFrame>
         <Sources app={app}/>
       </LeftFrame>
       <RightFrame>
-        <div id="messages">
-          <Messages app={this}/>
-        </div>
+        <Messages app={app}/>
       </RightFrame>
     </ChatFrame>
   )

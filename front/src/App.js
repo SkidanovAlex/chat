@@ -10,6 +10,7 @@ import Header from './components/header';
 import Chat from './components/chat';
 import Messages from './components/messages';
 import Footer from './components/footer';
+import Sources from './components/sources';
 
 const MinAccountIdLen = 2;
 const MaxAccountIdLen = 64;
@@ -316,6 +317,13 @@ class App extends React.Component {
     this.reloadData();
   }
 
+  refreshSources() {
+    ReactDOM.render(
+      Sources(this),
+      document.getElementById('sources')
+    );    
+  }
+
   reloadData() {
     this._contract.getAllThreads({}).then(threads => {
       threads.forEach(thread => {
@@ -325,6 +333,7 @@ class App extends React.Component {
       })
       console.log(threads);
       this.refreshMessages();
+      this.refreshSources();
     });
   }
 

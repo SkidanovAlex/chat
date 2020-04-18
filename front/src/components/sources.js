@@ -40,27 +40,29 @@ const Rule = styled.div`
   border: 0.5px solid ${theme.tokenRowHover};
 `
 
-export default function Sources({app}) {
+export default function Sources(app) {
   let channels = ['General', 'Staking', 'DevX'];
-  let threads = ['General', 'Staking', 'DevX'];
+  let threads = [];
+  for (const [key, value] of window.threads.entries()) {
+    threads.push({id: key, name: value})
+    console.log("AAAAAAAAAA", key, value);
+  }
+  console.log(threads);
   return (
-    <SourcesFrame>
-      <Channel key="" onClick={() => app.updateChannelThread(null, 0)}>All messages</Channel>
+    <SourcesFrame id="sources">
+      <Channel key="" onClick={() => {app.updateChannelThread(null, 0)}}>All messages</Channel>
       <Rule/>
       <SourceName>Channels</SourceName>
       {channels.map(channel => (
-        <Channel key={channel} onClick={() => app.updateChannelThread(channel, 0)}>{channel}</Channel>
+        <Channel key={channel} onClick={() => {app.updateChannelThread(channel, 0)}}>{channel}</Channel>
       ))}
       <Rule/>
       <SourceName>Threads</SourceName>
-      {threads.map(channel => (
-        <Channel key={channel} onClick={() => app.updateChannelThread(channel, 0)}>{channel}</Channel>
+      {threads.map(thread => (
+        <Channel key={thread.id} onClick={() => app.updateChannelThread(window.channel, thread.id)}>{thread.name}</Channel>
       ))}
       <Rule/>
       <SourceName>Private</SourceName>
-      {channels.map(channel => (
-        <Channel key={channel} onClick={() => app.reloadData(channel)}>{channel}</Channel>
-      ))}
     </SourcesFrame>
   )
 }
