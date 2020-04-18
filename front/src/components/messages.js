@@ -10,16 +10,12 @@ const MessagesWrapper = styled.div`
   justify-content: flex-start;
   width: 100%;
   height: 100%;
-  overflow: auto;
 `
 
 const MessageWrapper = styled.div`
   margin: 0.5rem 0 0 0.5rem;
   display: flex;
   flex-direction: column;
-  min-height: 30px;
-  overflow: auto;
-  white-space: nowrap;
 `
 
 const MessageHeader = styled.div`

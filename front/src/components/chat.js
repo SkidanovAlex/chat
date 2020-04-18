@@ -21,6 +21,8 @@ export const LeftFrame = styled.div`
   width: 20%;
   height: 100%;
   min-width: 200px;
+  overflow-x: hidden;
+  overflow-y: auto;
 `
 
 export const RightFrame = styled.div`
@@ -30,6 +32,7 @@ export const RightFrame = styled.div`
   justify-content: space-between;
   width: 80%;
   height: 100%;
+  overflow-y: auto;
 `
 
 export default function Chat(app) {

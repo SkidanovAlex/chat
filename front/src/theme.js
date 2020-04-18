@@ -84,7 +84,7 @@ export const GlobalStyle = createGlobalStyle`
     padding: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden;    
+    overflow: hidden;
   }
 
   body > div {
@@ -193,8 +193,6 @@ export const Spinner = styled.img`
 
 export const Text = styled.p`
   flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   margin: 0 0.5rem 0 0.25rem;
   font-size: 0.83rem;

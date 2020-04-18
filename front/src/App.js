@@ -25,24 +25,26 @@ const AppWrapper = styled.div`
   align-items: flex-start;
   justify-content: space-between;
   height: 100vh;
+  overflow: hidden;
 `
 
 const HeaderWrapper = styled.div`
-  ${theme.flexRowNoWrap}
+  height: 50px;
   width: 100%;
   justify-content: space-between;
 `
 
 const ChatWrapper = styled.div`
-  flex: 1 1 auto;
+  flex: 1;
   display: flex;
   flex-direction: row;
   width: 100%;
   justify-content: flex-start;
+  overflow: hidden;
 `
 
 const FooterWrapper = styled.div`
-  min-height: 30px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: space-between;
