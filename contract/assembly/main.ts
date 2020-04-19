@@ -1,6 +1,6 @@
 // @nearfile
 import { context, logging, PersistentVector, PersistentMap } from "near-sdk-as";
-import { PostedMessage, Thread, getChannelCollectionName, getThreadCollectionName } from './model';
+import { PostedMessage, Thread, DeviceKey, getChannelCollectionName, getThreadCollectionName } from './model';
 
 export function addMessage(channel: string, thread_id: u64, text: string): void {
   let allMessages = new PersistentVector<PostedMessage>("messages");
@@ -89,4 +89,31 @@ export function getAllThreads(): Array<Thread> {
     ret.push(threads.get(allThreadIds[i])!);
   }
   return ret;
+}
+
+export function setDeviceAccountKey(device_name: string, device_public_key: string, encrypted_account_key: string): void {
+  let account_keys = new PersistentMap<string, string>("account_keys");
+
+  let account_key = account_keys.get(context.sender)!;
+  if (account_key != "") {
+    return;
+  }
+
+  let device_key = new DeviceKey(device_name, device_public_key, encrypted_account_key);
+
+  //let all_device_public_keys = new PersistentMap<string, PersistentVector<string>>("all_device_public_keys");
+  //let device_public_keys = all_device_public_keys.get(context.sender)!;
+
+  //let device_keys = new PersistentMap<string, DeviceKey>("device_keys");
+
+  //device_public_keys.push(device_public_key);
+  //device_keys.set(device_public_key, device_key)
+  //account_keys.set(context.sender, encrypted_account_key);
+}
+
+export function getAccountKey(account_id: string): String {
+  let account_keys = new PersistentMap<string, string>("account_keys");
+
+  let account_key = account_keys.get(account_id)!;
+  return account_key;
 }

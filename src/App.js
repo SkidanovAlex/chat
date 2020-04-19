@@ -60,9 +60,8 @@ class App extends React.Component {
       connected: false,
       signedIn: false,
       accountId: null,
-      receiverId: "",
-      receiversKey: null,
-      accountLoading: false,
+      hasDeviceKey: false,
+      hasAccountKey: false,
     }
     window.messages = []
     window.channel = null
@@ -70,13 +69,37 @@ class App extends React.Component {
     window.pendingMsg = null
     window.threads = new Map()
 
-    this._prepareDeviceKey()
-    if (!this._deviceKey) {
-      // TODO MOO
-      return;
-    }
-
     this._initNear()
+  }
+
+  async _initNear() {
+    const nearConfig = {
+      networkId: 'default',
+      nodeUrl: 'https://rpc.nearprotocol.com',
+      contractName: ContractName,
+      walletUrl: 'https://wallet.nearprotocol.com',
+    };
+    const keyStore = new nearlib.keyStores.BrowserLocalStorageKeyStore();
+    const near = await nearlib.connect(Object.assign({ deps: { keyStore } }, nearConfig));
+    this._keyStore = keyStore;
+    this._nearConfig = nearConfig;
+    this._near = near;
+
+    this._walletAccount = new nearlib.WalletAccount(this._near);
+    this._accountId = this._walletAccount.getAccountId();
+
+    this._contract = await this._near.loadContract(this._nearConfig.contractName, {
+      viewMethods: ['getMessagesForThread', 'getAllMessages', 'getThreadName', 'getMessagesForChannel', 'getAllThreads', 'isKnownAccount'],
+      changeMethods: ['addMessage', 'setThreadName'],
+      sender: this._accountId,
+    });
+    //await this._updateEncryptionPublicKey();
+    this.setState({
+      connected: true,
+      signedIn: !!this._accountId,
+      accountId: this._accountId,
+    })
+    this.reloadData();
   }
 
   _prepareDeviceKey() {
@@ -106,37 +129,6 @@ class App extends React.Component {
     } else {
       console.log(`Current public encryption key is up to date: ${key}`);
     }*/
-  }
-
-  async _initNear() {
-    const nearConfig = {
-      networkId: 'default',
-      nodeUrl: 'https://rpc.nearprotocol.com',
-      contractName: ContractName,
-      walletUrl: 'https://wallet.nearprotocol.com',
-    };
-    const keyStore = new nearlib.keyStores.BrowserLocalStorageKeyStore();
-    const near = await nearlib.connect(Object.assign({ deps: { keyStore } }, nearConfig));
-    this._keyStore = keyStore;
-    this._nearConfig = nearConfig;
-    this._near = near;
-
-    this._walletAccount = new nearlib.WalletAccount(this._near);
-    this._accountId = this._walletAccount.getAccountId();
-    console.log(this)
-
-    this._contract = await this._near.loadContract(this._nearConfig.contractName, {
-      viewMethods: ['getMessagesForThread', 'getAllMessages', 'getThreadName', 'getMessagesForChannel', 'getAllThreads'],
-      changeMethods: ['addMessage', 'setThreadName'],
-      sender: this._accountId,
-    });
-    await this._updateEncryptionPublicKey();
-    this.setState({
-      connected: true,
-      signedIn: !!this._accountId,
-      accountId: this._accountId,
-    })
-    this.reloadData();
   }
 
   handleChange(key, value) {
@@ -172,16 +164,6 @@ class App extends React.Component {
     return accountId.length >= MinAccountIdLen &&
         accountId.length <= MaxAccountIdLen &&
         accountId.match(ValidAccountRe);
-  }
-
-  receiverClass() {
-    if (!this.state.receiverId || (this.isValidAccount(this.state.receiverId) && this.state.accountLoading)) {
-      return "form-control form-control-large";
-    } else if (this.isValidAccount(this.state.receiverId) && this.state.receiversKey) {
-      return "form-control form-control-large is-valid";
-    } else {
-      return "form-control form-control-large is-invalid";
-    }
   }
 
   async requestSignIn() {

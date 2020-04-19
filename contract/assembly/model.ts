@@ -28,6 +28,15 @@ export class Thread {
 
 }
 
+export class DeviceKey {
+
+  constructor(
+    public device_name: string,
+    public device_public_key: string,
+    public encrypted_account_key: string){}
+
+}
+
 export function getChannelCollectionName(channel: string): string {
     return "CHANNEL" + PROTOCOL_VERSION + ":" + channel;
 }
