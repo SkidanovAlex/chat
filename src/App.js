@@ -60,7 +60,6 @@ class App extends React.Component {
       connected: false,
       signedIn: false,
       accountId: null,
-      hasDeviceKey: false,
       hasAccountKey: false,
     }
     window.messages = []
@@ -93,12 +92,15 @@ class App extends React.Component {
       changeMethods: ['addMessage', 'setThreadName'],
       sender: this._accountId,
     });
-    //await this._updateEncryptionPublicKey();
     this.setState({
       connected: true,
       signedIn: !!this._accountId,
       accountId: this._accountId,
     })
+    if (this.state.signedIn) {
+      this._prepareDeviceKey()
+      await this._prepareAccountKey()
+    }
     this.reloadData();
   }
 
@@ -118,46 +120,22 @@ class App extends React.Component {
     this._deviceKey = key;
   }
 
-  async _updateEncryptionPublicKey() {
-    const key = Buffer.from(this._deviceKey.publicKey).toString('base64');
-
-    // TODO MOO
-    /*const currentKey = await this._contract.get_key({account_id: this._accountId});
-    if (currentKey !== key) {
-      console.log(`Updating public encryption key to ${key}`);
-      await this._contract.set_key({key});
-    } else {
-      console.log(`Current public encryption key is up to date: ${key}`);
-    }*/
-  }
-
-  handleChange(key, value) {
-    const stateChange = {
-      [key]: value,
-    };
-    if (key === 'receiverId') {
-      value = value.toLowerCase().replace(/[^a-z0-9\-_.]/, '');
-      stateChange[key] = value;
-      stateChange.receiversKey = null;
-      if (this.isValidAccount(value)) {
-        stateChange.accountLoading = true;
-        this._contract.getKey({account_id: value}).then((receiversKey) => {
-          if (this.state.receiverId === value) {
-            this.setState({
-              accountLoading: false,
-              receiversKey,
-            })
-          }
-        }).catch((e) => {
-          if (this.state.receiverId === value) {
-            this.setState({
-              accountLoading: false,
-            })
-          }
-        })
+  async _prepareAccountKey() {
+    const keyName = "near_chat_account_key";
+    let key = localStorage.getItem(keyName);
+    if (key) {
+      const buf = Buffer.from(key, 'base64');
+      if (buf.length !== nacl.box.secretKeyLength) {
+        throw new Error("Given secret key has wrong length");
       }
+      key = nacl.box.keyPair.fromSecretKey(buf);
+    } else {
+      // TODO MOO get account key
+      key = new nacl.box.keyPair();
+      localStorage.setItem(keyName, Buffer.from(key.secretKey).toString('base64'));
     }
-    this.setState(stateChange);
+    this._accountKey = key;
+    this.setState({hasAccountKey: true})
   }
 
   isValidAccount(accountId) {
