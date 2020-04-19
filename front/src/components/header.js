@@ -48,7 +48,7 @@ const Logo = styled.div`
 const Title = styled.div`
   display: flex;
   align-items: center;
-  margin: 0.5rem;
+  margin: 0.5rem 0.5rem 0.5rem 0;
 
   :hover {
     cursor: pointer;
@@ -70,7 +70,6 @@ const Title = styled.div`
 `
 
 const StatusGeneric = styled.button`
-  ${theme.flexRowNoWrap}
   width: 100%;
   font-size: 0.9rem;
   align-items: center;
@@ -96,19 +95,9 @@ const StatusConnect = styled(StatusGeneric)`
     color: ${darken(0.1, theme.royalBlue)};
   }
 
-  ${({ faded }) =>
-    faded &&
-    css`
-      background-color: transparent;
-      border: 1px solid ${theme.royalBlue};
-      color: ${theme.royalBlue};
-
-      :hover,
-      :focus {
-        border: 1px solid ${darken(0.1, theme.royalBlue)};
-        color: ${darken(0.1, theme.royalBlue)};
-      }
-    `}
+  :active {
+    background-color: ${darken(0.1, theme.backgroundColor)};
+  }
 `
 
 const LogoFrame = styled.div`
@@ -122,24 +111,25 @@ const LogoElement = styled.div`
   margin-right: 0.4rem;
   display: flex;
   min-width: 0;
+  align-items: center;
+`
+
+const Status = styled.div`
   display: flex;
   align-items: center;
 `
 
+const StatusElement = styled.div`
+  margin: 0.5rem 0.5rem 0.5rem 0;
+`
+
 export default function Header({app}) {
-  let status = !app.state.connected ? (
-    <StatusConnect>Connecting...</StatusConnect>
-  ) : (app.state.signedIn ? (
-    <StatusConnect>Hello {app.state.accountId}</StatusConnect>
-  ) : (
-    <Button onClick={() => app.requestSignIn()}>Login</Button>
-  ));
   let location = !window.channel ? (
-    <Title>All messages</Title>
+    "All messages"
   ) : (!window.threadId ? (
-    <Title>{window.channel}</Title>
+    window.channel
   ) : (
-    <Title>{window.channel} » {window.threads.get(window.threadId).name}</Title>
+    window.channel + " » " + window.threads.get(window.threadId).name
   ))
   return (
     <HeaderFrame id="header">
@@ -158,10 +148,34 @@ export default function Header({app}) {
         </Logo>
       </LeftFrame>
       <RightFrame>
-        {location}
         <Title>
-          {status}
+          {location}
         </Title>
+        {app.state.connected ? (
+          <Status>
+            {app.state.hasAccountKey ? (
+              <Title>Full Access</Title>
+            ) : (
+              <Title>Limited Access</Title>
+            )}
+            {app.state.signedIn ? (
+              <StatusElement>
+                <StatusConnect onClick={() => app.requestSignOut()}>Sign Out</StatusConnect>
+              </StatusElement>
+            ) : (
+              <StatusElement>
+                <Button onClick={() => app.requestSignIn()}>Log In</Button>
+              </StatusElement>
+            )}
+          </Status>
+        ) : (
+          <Status>
+            <Title>No Access</Title>
+            <StatusElement>
+              <StatusConnect onClick={() => window.location.reload()}>Connecting...</StatusConnect>
+            </StatusElement>
+          </Status>
+        )}
       </RightFrame>
     </HeaderFrame>
   )

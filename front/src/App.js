@@ -70,13 +70,18 @@ class App extends React.Component {
     window.pendingMsg = null
     window.threads = new Map()
 
-    this._parseEncryptionKey()
+    this._prepareDeviceKey()
+    if (!this._deviceKey) {
+      // TODO MOO
+      return;
+    }
+
     this._initNear()
   }
 
-  _parseEncryptionKey() {
-    const keyKey = "enc_key:";
-    let key = localStorage.getItem(keyKey);
+  _prepareDeviceKey() {
+    const keyName = "near_chat_device_key";
+    let key = localStorage.getItem(keyName);
     if (key) {
       const buf = Buffer.from(key, 'base64');
       if (buf.length !== nacl.box.secretKeyLength) {
@@ -85,13 +90,13 @@ class App extends React.Component {
       key = nacl.box.keyPair.fromSecretKey(buf);
     } else {
       key = new nacl.box.keyPair();
-      localStorage.setItem(keyKey, Buffer.from(key.secretKey).toString('base64'));
+      localStorage.setItem(keyName, Buffer.from(key.secretKey).toString('base64'));
     }
-    this._key = key;
+    this._deviceKey = key;
   }
 
   async _updateEncryptionPublicKey() {
-    const key = Buffer.from(this._key.publicKey).toString('base64');
+    const key = Buffer.from(this._deviceKey.publicKey).toString('base64');
 
     // TODO MOO
     /*const currentKey = await this._contract.get_key({account_id: this._accountId});
@@ -267,9 +272,9 @@ class App extends React.Component {
     //this.setState({refreshTimeout: setTimeout(this.refreshMessages, 1000)});
     // Checking if the page is not active and exits without requesting messages from the chain
     // to avoid unnecessary queries to the devnet.
-    if (document.hidden) {
+    /*if (document.hidden) {
       return;
-    }
+    }*/
     // Adding animation UI
     //$('#refresh-span').addClass(animateClass);
     // Calling the contract to read messages which makes a call to devnet.
