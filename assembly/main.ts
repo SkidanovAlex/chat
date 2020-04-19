@@ -1,9 +1,9 @@
 // @nearfile
 import { context, logging, PersistentVector, PersistentMap } from "near-sdk-as";
-import { PostedMessage, Thread, getChannelCollectionName, getThreadCollectionName } from './model';
+import { PostedMessage, Thread, getChannelCollectionName, getThreadCollectionName, getCollectionName } from './model';
 
 export function addMessage(channel: string, thread_id: u64, text: string): void {
-  let allMessages = new PersistentVector<PostedMessage>("messages");
+  let allMessages = new PersistentVector<PostedMessage>(getCollectionName("messages"));
   let msg_id = allMessages.length;
 
   if (thread_id == 0) {
@@ -15,7 +15,7 @@ export function addMessage(channel: string, thread_id: u64, text: string): void 
 
   allMessages.push(message);
 
-  let threads = new PersistentMap<u64, Thread>("threads");
+  let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
   threads.set(thread_id, thread);
 
   let channelMessageIds = new PersistentVector<u32>(getChannelCollectionName(channel));
@@ -26,7 +26,7 @@ export function addMessage(channel: string, thread_id: u64, text: string): void 
 }
 
 export function getMessagesForThread(channel: string, thread_id: u64): Array<PostedMessage> {
-  let allMessages = new PersistentVector<PostedMessage>("messages");
+  let allMessages = new PersistentVector<PostedMessage>(getCollectionName("messages"));
   let threadMessageIds = new PersistentVector<u32>(getThreadCollectionName(thread_id));
 
   let ret = new Array<PostedMessage>();
@@ -39,7 +39,7 @@ export function getMessagesForThread(channel: string, thread_id: u64): Array<Pos
 }
 
 export function getMessagesForChannel(channel: string): Array<PostedMessage> {
-  let allMessages = new PersistentVector<PostedMessage>("messages");
+  let allMessages = new PersistentVector<PostedMessage>(getCollectionName("messages"));
   let channelMessageIds = new PersistentVector<u32>(getChannelCollectionName(channel));
 
   let ret = new Array<PostedMessage>();
@@ -52,7 +52,7 @@ export function getMessagesForChannel(channel: string): Array<PostedMessage> {
 }
 
 export function getAllMessages(): Array<PostedMessage> {
-  let allMessages = new PersistentVector<PostedMessage>("messages");
+  let allMessages = new PersistentVector<PostedMessage>(getCollectionName("messages"));
 
   let ret = new Array<PostedMessage>();
   
@@ -63,14 +63,14 @@ export function getAllMessages(): Array<PostedMessage> {
 }
 
 export function getThreadName(thread_id: u64): String {
-  let threads = new PersistentMap<u64, Thread>("threads");
+  let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
   return threads.get(thread_id)!.name;
 }
 
 export function setThreadName(channel: string, thread_id: u64, name: string): void {
   let thread = new Thread(channel, thread_id, '!' + name);
-  let threads = new PersistentMap<u64, Thread>("threads");
-  let allThreadIds = new PersistentVector<u64>("all_threads");
+  let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
+  let allThreadIds = new PersistentVector<u64>(getCollectionName("all_named_threads"));
 
   let existingThread = threads.get(thread_id)!;
   if (!existingThread.name.startsWith("!")) {
@@ -80,8 +80,8 @@ export function setThreadName(channel: string, thread_id: u64, name: string): vo
 }
 
 export function getAllThreads(): Array<Thread> {
-  let threads = new PersistentMap<u64, Thread>("threads");
-  let allThreadIds = new PersistentVector<u64>("all_threads");
+  let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
+  let allThreadIds = new PersistentVector<u64>(getCollectionName("all_named_threads"));
 
   let ret = new Array<Thread>();
 

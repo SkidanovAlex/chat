@@ -1,7 +1,7 @@
 // @nearfile
 import { storage } from 'near-sdk-as';
 
-const PROTOCOL_VERSION = "10";
+const PROTOCOL_VERSION = "11";
 
 
 // Exporting a new class PostedMessage so it can be used outside of this file.
@@ -28,6 +28,7 @@ export class Thread {
 
 }
 
+
 export function getChannelCollectionName(channel: string): string {
     return "CHANNEL" + PROTOCOL_VERSION + ":" + channel;
 }
@@ -36,3 +37,6 @@ export function getThreadCollectionName(threadId: u64): string {
     return "THREAD" + PROTOCOL_VERSION + ":" + threadId.toString();
 }
 
+export function getCollectionName(collection: string): string {
+    return collection + PROTOCOL_VERSION;
+}
