@@ -191,6 +191,11 @@ class App extends React.Component {
     )
   }
 
+  async requestSignOut() {
+    await this._walletAccount.signOut()
+    window.location.reload()
+  }
+
   /**
   unbox encrypted messages with our secret key
   @param {string} msg64 encrypted message encoded as Base64
