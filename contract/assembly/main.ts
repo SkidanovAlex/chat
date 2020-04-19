@@ -1,6 +1,6 @@
 // @nearfile
 import { context, logging, PersistentVector, PersistentMap } from "near-sdk-as";
-import { PostedMessage, Thread, DeviceKey, getChannelCollectionName, getThreadCollectionName, getCollectionName } from './model';
+import { PostedMessage, Thread, DeviceKey, getChannelCollectionName, getThreadCollectionName, getDeviceKeysCollectionName, getCollectionName } from './model';
 
 export function addMessage(channel: string, thread_id: u64, text: string): void {
   let allMessages = new PersistentVector<PostedMessage>(getCollectionName("messages"));
@@ -91,28 +91,71 @@ export function getAllThreads(): Array<Thread> {
   return ret;
 }
 
-export function setDeviceAccountKey(device_name: string, device_public_key: string, encrypted_account_key: string): void {
-  let account_keys = new PersistentMap<string, string>("account_keys");
+export function accountKnown(): boolean {
+  let account_keys = new PersistentMap<string, string>(getCollectionName("account_keys"));
+  
+  return account_keys.contains(context.sender);
+}
 
-  let account_key = account_keys.get(context.sender)!;
-  if (account_key != "") {
+export function registerDeviceAndAccountKey(device_name: string, device_public_key: string, account_public_key: string, encrypted_account_key: string): void {
+  let account_keys = new PersistentMap<string, string>(getCollectionName("account_keys"));
+
+  if (account_keys.contains(context.sender)) {
     return;
   }
 
+  let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(context.sender));
+
+  if (my_device_keys.length > 0) {
+    // Only the first device can set the account key
+    return;
+  }
+
+  account_keys.set(context.sender, account_public_key);
+
   let device_key = new DeviceKey(device_name, device_public_key, encrypted_account_key);
-
-  //let all_device_public_keys = new PersistentMap<string, PersistentVector<string>>("all_device_public_keys");
-  //let device_public_keys = all_device_public_keys.get(context.sender)!;
-
-  //let device_keys = new PersistentMap<string, DeviceKey>("device_keys");
-
-  //device_public_keys.push(device_public_key);
-  //device_keys.set(device_public_key, device_key)
-  //account_keys.set(context.sender, encrypted_account_key);
+  my_device_keys.push(device_key);
 }
 
-export function getAccountKey(account_id: string): String {
-  let account_keys = new PersistentMap<string, string>("account_keys");
+export function registerDeviceKey(device_name: string, device_public_key: string): void {
+  let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(context.sender));
+
+  if (my_device_keys.length == 0) {
+    // The first device key must be added via `registerDeviceAndAccountKey`
+    return;
+  }
+
+  let device_key = new DeviceKey(device_name, device_public_key, "");
+  my_device_keys.push(device_key);
+}
+
+export function getAnyUnathorizedDeviceKey(): string {
+  let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(context.sender));
+
+  for (let i = 0; i < my_device_keys.length; ++ i) {
+    let device_key = my_device_keys[i];
+    if (device_key.encrypted_account_key == "") {
+      return device_key.device_public_key;
+    }
+  }
+
+  return "";
+}
+
+export function authorizeDeviceKey(device_public_key: string, encrypted_account_key: string): void {
+  let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(context.sender));
+
+  for (let i = 0; i < my_device_keys.length; ++ i) {
+    let device_key = my_device_keys[i];
+    if (device_key.device_public_key == device_public_key) {
+      device_key.encrypted_account_key = encrypted_account_key;
+      my_device_keys[i] = device_key;
+    }
+  }
+}
+
+export function getAccountPublicKey(account_id: string): String {
+  let account_keys = new PersistentMap<string, string>(getCollectionName("account_keys"));
 
   let account_key = account_keys.get(account_id)!;
   return account_key;

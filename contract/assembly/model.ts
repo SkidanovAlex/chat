@@ -45,6 +45,10 @@ export function getThreadCollectionName(threadId: u64): string {
     return "THREAD" + PROTOCOL_VERSION + ":" + threadId.toString();
 }
 
+export function getDeviceKeysCollectionName(account_id: string): string {
+  return "DEVICEKEY" + PROTOCOL_VERSION + ":" + account_id;
+}
+
 export function getCollectionName(collection: string): string {
     return collection + PROTOCOL_VERSION;
 }
