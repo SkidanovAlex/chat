@@ -132,7 +132,7 @@ class App extends React.Component {
     });
 
     if (this.state.signedIn && !this.state.hasAccountKey) {
-      this._contract.accountKnown().then(known_account => {
+      this._contract.accountKnown({account_id: this.state.accountId}).then(known_account => {
         console.log("KNOWN ACCOUNT!", known_account)
         if (!known_account) {
           this._processNewAccount().then(() => {
@@ -397,7 +397,7 @@ class App extends React.Component {
         } else {
           this._contract.getEncryptedAccountKey({
             account_id: this.state.accountId,
-            device_public_key: this._deviceKey.publicKe
+            device_public_key: Buffer.from(this._deviceKey.publicKey).toString('base64'),
           }).then(encrypted_account_key => {
             if (encrypted_account_key !== "") {
               // TODO unbox it and save
