@@ -142,18 +142,16 @@ class App extends React.Component {
           })
           .catch(console.error);
         } else {
-          const deviceKey = new nacl.box.keyPair();
-          localStorage.setItem(deviceKeyName, Buffer.from(deviceKey.secretKey).toString('base64'));
-          this._deviceKey = deviceKey;
+          const deviceKey = this._deviceKey;
           console.log('REQUEST ACCESS FOR DEVICE KEY ', this.state.deviceName, Buffer.from(deviceKey.publicKey).toString('base64'), deviceKey.publicKey);
           this._contract.registerDeviceKey({
             device_name: this.state.deviceName,
             device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
           }, GasTransaction).then(success => {
             console.log("NEW DEVICE KEY!", success)
-            if (!success) {
+            /*if (!success) {
               throw new Error("Cannot register new device key");
-            }
+            }*/
           })
           .catch(console.error);
         }
@@ -171,8 +169,11 @@ class App extends React.Component {
         throw new Error("Stored device key has wrong length");
       }
       deviceKey = nacl.box.keyPair.fromSecretKey(buf);
-      this._deviceKey = deviceKey;
+    } else {
+      deviceKey = new nacl.box.keyPair();
+      localStorage.setItem(deviceKeyName, Buffer.from(deviceKey.secretKey).toString('base64'));
     }
+    this._deviceKey = deviceKey;
 
     let accountKey = localStorage.getItem(accountKeyName);
     if (accountKey) {
@@ -248,6 +249,7 @@ class App extends React.Component {
   @return {string} decoded contents of the box
   */
   decryptBox(msg64, mySecretKey, theirPublicKey64) {
+    console.log("DECRYPT: ", msg64, mySecretKey, theirPublicKey64);
     const theirPublicKey = Buffer.from(theirPublicKey64, 'base64');
     if (theirPublicKey.length !== nacl.box.publicKeyLength) {
       throw new Error("Given encryption public key is invalid.");
@@ -269,6 +271,7 @@ class App extends React.Component {
   @returns {string} base64 encoded box of incoming message
   */
   encryptBox(str, mySecretKey, theirPublicKey64) {
+    console.log("ENCRYPT: ", str, mySecretKey, theirPublicKey64);
     const theirPublicKey = Buffer.from(theirPublicKey64, 'base64');
     if (theirPublicKey.length !== nacl.box.publicKeyLength) {
       throw new Error("Given encryption public key is invalid.");
@@ -405,10 +408,10 @@ class App extends React.Component {
       if (!success) {
         throw new Error("Cannot authorize device key");
       }
+      this.unauthorizedDeviceKey = null;
+      this.reloadData()
     })
     .catch(console.error);
-    this.unauthorizedDeviceKey = null;
-    this.reloadData()
   }
 
   reloadData() {
@@ -433,6 +436,7 @@ class App extends React.Component {
               this._contract.getAccountPublicKey({account_id: this.state.accountId}).then(accountPublicKey => {
                 // TODO
                 accountPublicKey = Buffer.from(accountPublicKey, 'base64');
+                console.log("OLOLO1==", encryptedAccountKey, accountPublicKey);
                 let accountSecretKey = this.decryptBox(
                   encryptedAccountKey,
                   this._deviceKey.secretKey,
