@@ -111,12 +111,12 @@ class App extends React.Component {
         'getMessagesForChannel',
         'getAllThreads',
         'getAccountPublicKey',
+        'getAnyUnauthorizedDeviceKey',
       ],
       changeMethods: [
         'addMessage',
         'setThreadName',
         'accountKnown',
-        'getAnyUnauthorizedDeviceKey',
         'registerDeviceAndAccountKey',
         'registerDeviceKey',
         'authorizeDeviceKey',
@@ -369,12 +369,13 @@ class App extends React.Component {
     );    
   }
 
-  async _prepareUnathorizedDevice() {
+  async _prepareUnauthorizedDevice() {
     let deviceKey = await this._contract.getAnyUnauthorizedDeviceKey();
+    console.log("##############", deviceKey)
   }
 
   reloadData() {
-    this._prepareUnathorizedDevice()
+    this._prepareUnauthorizedDevice()
     this._contract.getAllThreads({}).then(threads => {
       threads.forEach(thread => {
         if (!window.threads.get(thread.thread_id)) {
