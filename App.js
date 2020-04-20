@@ -72,7 +72,9 @@ class App extends React.Component {
     window.threadId = 0
     window.pendingMsg = null
     window.threads = new Map()
+  }
 
+  componentDidMount() {
     this._setDeviceName()
     this._initNear()
   }
@@ -83,8 +85,8 @@ class App extends React.Component {
     ) : (
       deviceType + " " + osVersion + " " + browserName
     );
-    this.state.deviceName = deviceName
-    console.log(this.state.deviceName)
+    console.log(deviceName)
+    this.setState({deviceName: deviceName})
   }
 
   async _initNear() {
@@ -111,21 +113,23 @@ class App extends React.Component {
         'getMessagesForChannel',
         'getAllThreads',
         'getAccountPublicKey',
-        'getAnyUnauthorizedDeviceKey',
       ],
       changeMethods: [
         'addMessage',
         'setThreadName',
         'accountKnown',
+        'getAnyUnauthorizedDeviceKey',
         'registerDeviceAndAccountKey',
         'registerDeviceKey',
         'authorizeDeviceKey',
       ],
       sender: this._accountId,
     });
-    this.state.connected = true
-    this.state.signedIn = !!this._accountId
-    this.state.accountId = this._accountId
+    this.setState({
+      connected: true,
+      signedIn: !!this._accountId,
+      accountId: this._accountId
+    });
 
     this._prepareKeys();
 
@@ -137,11 +141,11 @@ class App extends React.Component {
         const deviceKey = new nacl.box.keyPair();
         localStorage.setItem(deviceKeyName, Buffer.from(deviceKey.secretKey).toString('base64'));
         this._deviceKey = deviceKey;
-        this.state.hasDeviceKey = true;
-        console.log('REQUEST ACCESS FOR DEVICE KEY ', deviceKey);
+        this.setState({hasDeviceKey: true});
+        console.log('REQUEST ACCESS FOR DEVICE KEY ', this.state.deviceName, Buffer.from(deviceKey.publicKey).toString('base64'), deviceKey);
         await this._contract.registerDeviceKey({
           device_name: this.state.deviceName,
-          device_public_key: deviceKey.publicKey,
+          device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
         });
       }
     }
@@ -157,7 +161,7 @@ class App extends React.Component {
       }
       deviceKey = nacl.box.keyPair.fromSecretKey(buf);
       this._deviceKey = deviceKey;
-      this.state.hasDeviceKey = true;
+      this.setState({hasDeviceKey: true});
     }
 
     let accountKey = localStorage.getItem(accountKeyName);
@@ -168,7 +172,7 @@ class App extends React.Component {
       }
       accountKey = nacl.box.keyPair.fromSecretKey(buf);
       this._accountKey = accountKey;
-      this.state.hasAccountKey = true;
+      this.setState({hasAccountKey: true});
     }
   }
 
@@ -193,8 +197,8 @@ class App extends React.Component {
     console.log(this.state.deviceName)
     await this._contract.registerDeviceAndAccountKey({
       device_name: this.state.deviceName,
-      device_public_key: deviceKey.publicKey,
-      account_public_key: accountKey.publicKey,
+      device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
+      account_public_key: Buffer.from(accountKey.publicKey).toString('base64'),
       encrypted_account_key,
     })
   }
@@ -213,7 +217,7 @@ class App extends React.Component {
   }
 
   async requestSignOut() {
-    await this._walletAccount.signOut()
+    this._walletAccount.signOut()
     window.location.reload()
   }
 
@@ -369,24 +373,28 @@ class App extends React.Component {
     );    
   }
 
-  async _prepareUnauthorizedDevice() {
+  async _getAnyUnauthorizedDeviceKey() {
     let deviceKey = await this._contract.getAnyUnauthorizedDeviceKey();
     console.log("##############", deviceKey)
   }
 
   reloadData() {
-    this._prepareUnauthorizedDevice()
-    this._contract.getAllThreads({}).then(threads => {
-      threads.forEach(thread => {
-        if (!window.threads.get(thread.thread_id)) {
-          window.threads.set(thread.thread_id, thread)
-        }
-      })
-      console.log(threads);
-      this.refreshMessages();
-      this.refreshSources();
-      this.refreshHeader();
-    });
+    if (this.state.connected) {
+      if (this.state.signedIn && this.state.hasAccountKey) {
+        this._getAnyUnauthorizedDeviceKey()
+      }
+      this._contract.getAllThreads({}).then(threads => {
+        threads.forEach(thread => {
+          if (!window.threads.get(thread.thread_id)) {
+            window.threads.set(thread.thread_id, thread)
+          }
+        })
+        console.log(threads);
+        this.refreshMessages();
+        this.refreshSources();
+        this.refreshHeader();
+      });
+    }
   }
 
   render() {

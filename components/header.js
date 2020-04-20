@@ -153,7 +153,7 @@ export default function Header({app}) {
         </Title>
         {app.state.connected ? (
           <Status>
-            {app.state.hasAccountKey ? (
+            {app.state.signedIn && app.state.hasAccountKey ? (
               <Title>Full Access</Title>
             ) : (
               <Title>Limited Access</Title>
