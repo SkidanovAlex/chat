@@ -1,7 +1,7 @@
 // @nearfile
 import { storage } from 'near-sdk-as';
 
-const PROTOCOL_VERSION = "16";
+const PROTOCOL_VERSION = "17";
 
 
 // Exporting a new class PostedMessage so it can be used outside of this file.

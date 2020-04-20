@@ -152,7 +152,7 @@ export function getAnyUnauthorizedDeviceKey(account_id: string): String {
   return "";
 }
 
-export function authorizeDeviceKey(device_public_key: string, encrypted_account_key: string): void {
+export function authorizeDeviceKey(device_public_key: string, encrypted_account_key: string): boolean {
   let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(context.sender));
 
   for (let i = 0; i < my_device_keys.length; ++ i) {
@@ -160,8 +160,11 @@ export function authorizeDeviceKey(device_public_key: string, encrypted_account_
     if (device_key.device_public_key == device_public_key) {
       device_key.encrypted_account_key = encrypted_account_key;
       my_device_keys[i] = device_key;
+      return true;
     }
   }
+
+  return false;
 }
 
 export function getAccountPublicKey(account_id: string): String {
