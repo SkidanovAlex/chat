@@ -98,13 +98,13 @@ class App extends React.Component {
         'getThreadName',
         'getMessagesForChannel',
         'getAllThreads',
-        'accountKnown',
         'getAnyUnathorizedDeviceKey',
         'getAccountPublicKey'
       ],
       changeMethods: [
         'addMessage',
         'setThreadName',
+        'accountKnown',
         'registerDeviceAndAccountKey',
         'registerDeviceKey',
         'authorizeDeviceKey',
