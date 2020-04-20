@@ -104,9 +104,7 @@ export const GlobalStyle = createGlobalStyle`
 `
 
 
-export const Button = styled.button.attrs(({ warning }) => ({
-  backgroundColor: warning ? theme.salmonRed : theme.royalBlue
-}))`
+export const Button = styled.button`
   padding: 0.5rem 1.5rem 0.5rem 1.5rem;
   border-radius: 3rem;
   cursor: pointer;
@@ -115,17 +113,17 @@ export const Button = styled.button.attrs(({ warning }) => ({
   font-weight: 500;
   border: none;
   outline: none;
-  background-color: ${({ backgroundColor }) => backgroundColor};
+  background-color: ${theme.royalBlue};
   color: ${theme.nearBlack};
   width: 100%;
 
   :hover,
   :focus {
-    background-color: ${({ backgroundColor }) => darken(0.05, backgroundColor)};
+    background-color: ${darken(0.05, theme.royalBlue)};
   }
 
   :active {
-    background-color: ${({ backgroundColor }) => darken(0.1, backgroundColor)};
+    background-color: ${darken(0.1, theme.royalBlue)};
   }
 
   :disabled {

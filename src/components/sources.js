@@ -2,7 +2,7 @@ import React from 'react'
 import styled from 'styled-components'
 import { darken } from 'polished'
 
-import { Button, Input, theme } from "../theme";
+import { theme } from "../theme";
 
 const SourcesFrame = styled.div`
   display: flex;
@@ -47,7 +47,6 @@ export default function Sources(app) {
   for (const [key, value] of window.threads.entries()) {
     threads.push(value)
   }
-  console.log(threads);
   return (
     <SourcesFrame id="sources">
       <Channel key="" onClick={() => {app.updateChannelThread(null, 0)}}>All messages</Channel>

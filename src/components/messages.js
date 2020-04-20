@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from 'react'
+import React from 'react'
 import styled from 'styled-components'
-import { darken } from 'polished'
 
 import { theme } from "../theme";
 
@@ -61,7 +60,6 @@ function Message({text, sender, channel, showChannel, thread}) {
 export default function Messages(app) {
   const messages = window.messages;
   const channel = window.channel;
-  console.log(messages)
 
   return (
     <MessagesWrapper id="messages">
