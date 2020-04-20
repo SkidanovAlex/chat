@@ -17,8 +17,8 @@ const MinAccountIdLen = 2;
 const MaxAccountIdLen = 64;
 const ValidAccountRe = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
 
-const accountKeyName = "near_chat_account_key";
-const deviceKeyName = "near_chat_device_key";
+const accountKeyName = "near_chat_account_key  test";
+const deviceKeyName = "near_chat_device_key  test";
 
 const appTitle = 'NEAR Guest Book';
 const ContractName = 'studio-vvs2k3876';
@@ -135,6 +135,7 @@ class App extends React.Component {
 
     if (this.state.signedIn && !this.state.hasAccountKey) {
       const is_new_account = await this._contract.accountKnown();
+      console.log("NEW ACCOUNT!", is_new_account)
       if (is_new_account) {
         await this._processNewAccount()
       } else {
@@ -147,7 +148,7 @@ class App extends React.Component {
           device_name: this.state.deviceName,
           device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
         });
-        console.log("NEW KEY!", success)
+        console.log("NEW DEVICE KEY!", success)
         if (!success) {
           throw new Error("Cannot register new device key");
         }
