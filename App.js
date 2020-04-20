@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from "styled-components";
-import { deviceDetect } from "react-device-detect";
+import { deviceType, browserName, mobileVendor, mobileModel, osVersion, isMobile } from "react-device-detect";
 
 import * as nearlib from 'nearlib';
 import * as nacl from "tweetnacl";
@@ -64,6 +64,7 @@ class App extends React.Component {
       connected: false,
       signedIn: false,
       accountId: null,
+      hasDeviceKey: false,
       hasAccountKey: false,
     }
     window.messages = []
@@ -72,7 +73,18 @@ class App extends React.Component {
     window.pendingMsg = null
     window.threads = new Map()
 
+    this._setDeviceName()
     this._initNear()
+  }
+
+  _setDeviceName() {
+    const deviceName = isMobile ? (
+      deviceType + " " + mobileVendor + " " + mobileModel
+    ) : (
+      deviceType + " " + osVersion + " " + browserName
+    );
+    this.state.deviceName = deviceName
+    console.log(this.state.deviceName)
   }
 
   async _initNear() {
@@ -98,35 +110,66 @@ class App extends React.Component {
         'getThreadName',
         'getMessagesForChannel',
         'getAllThreads',
-        'getAnyUnathorizedDeviceKey',
-        'getAccountPublicKey'
+        'getAccountPublicKey',
       ],
       changeMethods: [
         'addMessage',
         'setThreadName',
         'accountKnown',
+        'getAnyUnauthorizedDeviceKey',
         'registerDeviceAndAccountKey',
         'registerDeviceKey',
         'authorizeDeviceKey',
       ],
       sender: this._accountId,
     });
-    this.setState({
-      connected: true,
-      signedIn: !!this._accountId,
-      accountId: this._accountId,
-    })
+    this.state.connected = true
+    this.state.signedIn = !!this._accountId
+    this.state.accountId = this._accountId
 
-    const is_new_account = await this._contract.accountKnown()
-    if (is_new_account) {
-      await this._processNewAccount()
-    }
+    this._prepareKeys();
 
-    if (this.state.signedIn) {
-      this._prepareDeviceKey()
-      await this._prepareAccountKey()
+    if (this.state.signedIn && !this.state.hasAccountKey) {
+      const is_new_account = await this._contract.accountKnown();
+      if (is_new_account) {
+        await this._processNewAccount()
+      } else {
+        const deviceKey = new nacl.box.keyPair();
+        localStorage.setItem(deviceKeyName, Buffer.from(deviceKey.secretKey).toString('base64'));
+        this._deviceKey = deviceKey;
+        this.state.hasDeviceKey = true;
+        console.log('REQUEST ACCESS FOR DEVICE KEY ', deviceKey);
+        await this._contract.registerDeviceKey({
+          device_name: this.state.deviceName,
+          device_public_key: deviceKey.publicKey,
+        });
+      }
     }
     this.reloadData();
+  }
+
+  _prepareKeys() {
+    let deviceKey = localStorage.getItem(deviceKeyName);
+    if (deviceKey) {
+      const buf = Buffer.from(deviceKey, 'base64');
+      if (buf.length !== nacl.box.secretKeyLength) {
+        throw new Error("Stored device key has wrong length");
+      }
+      deviceKey = nacl.box.keyPair.fromSecretKey(buf);
+      this._deviceKey = deviceKey;
+      this.state.hasDeviceKey = true;
+    }
+
+    let accountKey = localStorage.getItem(accountKeyName);
+    if (accountKey) {
+      const buf = Buffer.from(accountKey, 'base64');
+      if (buf.length !== nacl.box.secretKeyLength) {
+        throw new Error("Stored account key has wrong length");
+      }
+      accountKey = nacl.box.keyPair.fromSecretKey(buf);
+      this._accountKey = accountKey;
+      this.state.hasAccountKey = true;
+    }
   }
 
   async _processNewAccount() {
@@ -147,24 +190,13 @@ class App extends React.Component {
     this._deviceKey = deviceKey
     this._accountKey = accountKey
 
-    console.log(deviceDetect)
-    //await this._contract.registerDeviceAndAccountKey({channel: window.channel, thread_id: window.threadId.toString(), text})
-  }
-
-  _prepareDeviceKey() {
-    
-    /*let key = localStorage.getItem(keyName);
-    if (key) {
-      const buf = Buffer.from(key, 'base64');
-      if (buf.length !== nacl.box.secretKeyLength) {
-        throw new Error("Given secret key has wrong length");
-      }
-      key = nacl.box.keyPair.fromSecretKey(buf);
-    } else {
-      key = new nacl.box.keyPair();
-      localStorage.setItem(keyName, Buffer.from(key.secretKey).toString('base64'));
-    }
-    this._deviceKey = key;*/
+    console.log(this.state.deviceName)
+    await this._contract.registerDeviceAndAccountKey({
+      device_name: this.state.deviceName,
+      device_public_key: deviceKey.publicKey,
+      account_public_key: accountKey.publicKey,
+      encrypted_account_key,
+    })
   }
 
   isValidAccount(accountId) {
@@ -337,8 +369,12 @@ class App extends React.Component {
     );    
   }
 
+  async _prepareUnathorizedDevice() {
+    let deviceKey = await this._contract.getAnyUnauthorizedDeviceKey();
+  }
 
   reloadData() {
+    this._prepareUnathorizedDevice()
     this._contract.getAllThreads({}).then(threads => {
       threads.forEach(thread => {
         if (!window.threads.get(thread.thread_id)) {
