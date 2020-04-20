@@ -143,10 +143,14 @@ class App extends React.Component {
         this._deviceKey = deviceKey;
         this.setState({hasDeviceKey: true});
         console.log('REQUEST ACCESS FOR DEVICE KEY ', this.state.deviceName, Buffer.from(deviceKey.publicKey).toString('base64'), deviceKey);
-        await this._contract.registerDeviceKey({
+        let success = await this._contract.registerDeviceKey({
           device_name: this.state.deviceName,
           device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
         });
+        console.log("NEW KEY!", success)
+        if (!success) {
+          throw new Error("Cannot register new device key");
+        }
       }
     }
     this.reloadData();
@@ -195,12 +199,16 @@ class App extends React.Component {
     this._accountKey = accountKey
 
     console.log(this.state.deviceName)
-    await this._contract.registerDeviceAndAccountKey({
+    const success = await this._contract.registerDeviceAndAccountKey({
       device_name: this.state.deviceName,
       device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
       account_public_key: Buffer.from(accountKey.publicKey).toString('base64'),
       encrypted_account_key,
     })
+    console.log("NEW ACCOUNT!", success)
+    if (!success) {
+      throw new Error("Cannot create new account");
+    }
   }
 
   isValidAccount(accountId) {
