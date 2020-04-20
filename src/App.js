@@ -66,7 +66,6 @@ class App extends React.Component {
       connected: false,
       signedIn: false,
       accountId: null,
-      hasAccountKey: false,
       deviceName: isMobile ? (
         deviceType + " " + mobileVendor + " " + mobileModel
       ) : (
@@ -130,10 +129,9 @@ class App extends React.Component {
       connected: true,
       signedIn: !!this._accountId,
       accountId: this._accountId,
-      hasAccountKey: !!this._accountKey,
     });
 
-    if (this.state.signedIn && !this.state.hasAccountKey) {
+    if (this.state.signedIn && !this._accountKey) {
       this._contract.accountKnown({account_id: this.state.accountId}).then(known_account => {
         console.log("KNOWN ACCOUNT!", known_account)
         if (!known_account) {
@@ -176,7 +174,6 @@ class App extends React.Component {
     this._deviceKey = deviceKey;
 
     let accountKey = localStorage.getItem(accountKeyName);
-    this._accountKey = null;
     if (accountKey) {
       const buf = Buffer.from(accountKey, 'base64');
       if (buf.length !== nacl.box.secretKeyLength) {
@@ -184,38 +181,27 @@ class App extends React.Component {
       }
       accountKey = nacl.box.keyPair.fromSecretKey(buf);
       this._accountKey = accountKey;
+    } else {
+      this._accountKey = null;
     }
-    console.log("ACCOUNT KEY", this._accountKey);
+    console.log("ACCOUNT KEY =", this._accountKey);
   }
 
   async _processNewAccount() {
     const accountKey = new nacl.box.keyPair();
     localStorage.setItem(accountKeyName, Buffer.from(accountKey.secretKey).toString('base64'));
-    const deviceKey = new nacl.box.keyPair();
-    localStorage.setItem(deviceKeyName, Buffer.from(deviceKey.secretKey).toString('base64'));
-
-    /*const buf = Buffer.from(accountKey.secretKey);
-    const nonce = nacl.randomBytes(nacl.box.nonceLength);
-    const box = nacl.box(buf, nonce, deviceKey.publicKey, deviceKey.secretKey);
-
-    const fullBuf = new Uint8Array(box.length + nacl.box.nonceLength);
-    fullBuf.set(nonce);
-    fullBuf.set(box, nacl.box.nonceLength);
-    const encrypted_account_key = Buffer.from(fullBuf).toString('base64')*/
+    this._accountKey = accountKey
 
     const encrypted_account_key = this.encryptBox(
       Buffer.from(accountKey.secretKey).toString('base64'),
       accountKey.secretKey,
-      deviceKey.publicKey
+      this._deviceKey.publicKey
     )
-
-    this._deviceKey = deviceKey
-    this._accountKey = accountKey
 
     console.log(this.state.deviceName)
     const success = await this._contract.registerDeviceAndAccountKey({
       device_name: this.state.deviceName,
-      device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
+      device_public_key: Buffer.from(this._deviceKey.publicKey).toString('base64'),
       account_public_key: Buffer.from(accountKey.publicKey).toString('base64'),
       encrypted_account_key,
     })
@@ -395,9 +381,8 @@ class App extends React.Component {
 
   async authorizeDeviceKey() {
     let devicePublicKey = this.unauthorizedDeviceKey;
-    console.log('AAAA', devicePublicKey, this._deviceKey.publicKey);
     let buf = new Buffer.from(devicePublicKey, 'base64');
-    console.log('AAAA', buf, this._deviceKey.publicKey);
+    console.log('RECEIVED DEVICE PUBLIC KEY', buf);
 
     const encryptedAccountKey = this.encryptBox(
       Buffer.from(this._accountKey.secretKey).toString('base64'),
@@ -419,7 +404,7 @@ class App extends React.Component {
   reloadData() {
     if (this.state.connected) {
       if (this.state.signedIn) {
-        if (this.state.hasAccountKey) {
+        if (this._accountKey) {
           console.log("OLOLO", this._accountKey.secretKey, this._accountKey.publicKey, "OLOLO");
           this._contract.getAnyUnauthorizedDeviceKey({account_id: this.state.accountId}).then(deviceKey => {
             if (deviceKey !== "") {
@@ -449,8 +434,8 @@ class App extends React.Component {
                 const accountKey = nacl.box.keyPair.fromSecretKey(accountSecretKey);
                 console.log("OLOLO2", accountKey.secretKey, accountKey.publicKey);
                 // TODO make sure and and save
-                //this._accountKey = accountKey
-                //this.setState({hasAccountKey: true})
+                localStorage.setItem(accountKeyName, Buffer.from(accountKey.secretKey).toString('base64'));
+                this._accountKey = accountKey
               })
               .catch(console.error);
             }
