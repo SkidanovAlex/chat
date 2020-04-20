@@ -91,46 +91,56 @@ export function getAllThreads(): Array<Thread> {
   return ret;
 }
 
-export function accountKnown(): boolean {
+export function accountKnown(account_id: string): boolean {
   let account_keys = new PersistentMap<string, string>(getCollectionName("account_keys"));
   
-  return account_keys.contains(context.sender);
+  return account_keys.contains(account_id);
 }
 
-export function registerDeviceAndAccountKey(device_name: string, device_public_key: string, account_public_key: string, encrypted_account_key: string): void {
+export function registerDeviceAndAccountKey(device_name: string, device_public_key: string, account_public_key: string, encrypted_account_key: string): boolean {
   let account_keys = new PersistentMap<string, string>(getCollectionName("account_keys"));
 
   if (account_keys.contains(context.sender)) {
-    return;
+    return false;
   }
 
   let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(context.sender));
 
   if (my_device_keys.length > 0) {
     // Only the first device can set the account key
-    return;
+    return false;
   }
 
   account_keys.set(context.sender, account_public_key);
 
   let device_key = new DeviceKey(device_name, device_public_key, encrypted_account_key);
   my_device_keys.push(device_key);
+  return true;
 }
 
-export function registerDeviceKey(device_name: string, device_public_key: string): void {
+export function registerDeviceKey(device_name: string, device_public_key: string): boolean {
   let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(context.sender));
 
   if (my_device_keys.length == 0) {
     // The first device key must be added via `registerDeviceAndAccountKey`
-    return;
+    return false;
+  }
+
+  for (let i = 0; i < my_device_keys.length; ++ i) {
+    let device_key = my_device_keys[i];
+    if (device_key.device_public_key == device_public_key) {
+      // device key is already added
+      return false;
+    }
   }
 
   let device_key = new DeviceKey(device_name, device_public_key, "");
   my_device_keys.push(device_key);
+  return true;
 }
 
-export function getAnyUnathorizedDeviceKey(): string {
-  let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(context.sender));
+export function getAnyUnauthorizedDeviceKey(account_id: string): String {
+  let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(account_id));
 
   for (let i = 0; i < my_device_keys.length; ++ i) {
     let device_key = my_device_keys[i];
@@ -159,4 +169,16 @@ export function getAccountPublicKey(account_id: string): String {
 
   let account_key = account_keys.get(account_id)!;
   return account_key;
+}
+
+export function getEncryptedAccountKey(account_id: string, device_public_key: string): String {
+  let my_device_keys = new PersistentVector<DeviceKey>(getDeviceKeysCollectionName(account_id));
+
+  for (let i = 0; i < my_device_keys.length; ++ i) {
+    let device_key = my_device_keys[i];
+    if (device_key.device_public_key == device_public_key) {
+      return device_key.encrypted_account_key;
+    }
+  }
+  return "";
 }

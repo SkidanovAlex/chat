@@ -153,11 +153,16 @@ export default function Header({app}) {
         </Title>
         {app.state.connected ? (
           <Status>
-            {app.state.hasAccountKey ? (
+            {app.state.signedIn && app.state.hasAccountKey ? (
               <Title>Full Access</Title>
             ) : (
               <Title>Limited Access</Title>
             )}
+            {app.unauthorizedDeviceKey ? (
+              <StatusElement>
+                <Button onClick={() => app.authorizeDeviceKey()}>Auth Device</Button>
+              </StatusElement>
+            ) : (null)}
             {app.state.signedIn ? (
               <StatusElement>
                 <StatusConnect onClick={() => app.requestSignOut()}>Sign Out</StatusConnect>

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from "styled-components";
+import { deviceType, browserName, mobileVendor, mobileModel, osVersion, isMobile } from "react-device-detect";
 
 import * as nearlib from 'nearlib';
 import * as nacl from "tweetnacl";
@@ -15,6 +16,9 @@ import Sources from './components/sources';
 const MinAccountIdLen = 2;
 const MaxAccountIdLen = 64;
 const ValidAccountRe = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
+
+const accountKeyName = "near_chat_account_key  test";
+const deviceKeyName = "near_chat_device_key  test";
 
 const appTitle = 'NEAR Guest Book';
 const ContractName = 'studio-vvs2k3876';
@@ -61,13 +65,23 @@ class App extends React.Component {
       signedIn: false,
       accountId: null,
       hasAccountKey: false,
+      deviceName: isMobile ? (
+        deviceType + " " + mobileVendor + " " + mobileModel
+      ) : (
+        deviceType + " " + osVersion + " " + browserName
+      ),
     }
+    this.unauthorizedDeviceKey = null
     window.messages = []
     window.channel = null
     window.threadId = 0
     window.pendingMsg = null
     window.threads = new Map()
 
+    console.log(this.state.deviceName)
+  }
+
+  componentDidMount() {
     this._initNear()
   }
 
@@ -88,54 +102,122 @@ class App extends React.Component {
     this._accountId = this._walletAccount.getAccountId();
 
     this._contract = await this._near.loadContract(this._nearConfig.contractName, {
-      viewMethods: ['getMessagesForThread', 'getAllMessages', 'getThreadName', 'getMessagesForChannel', 'getAllThreads', 'isKnownAccount'],
-      changeMethods: ['addMessage', 'setThreadName'],
+      viewMethods: [
+        'getMessagesForThread',
+        'getAllMessages',
+        'getThreadName',
+        'getMessagesForChannel',
+        'getAllThreads',
+        'accountKnown',
+        'getAnyUnauthorizedDeviceKey',
+        'getAccountPublicKey',
+        'getEncryptedAccountKey',
+      ],
+      changeMethods: [
+        'addMessage',
+        'setThreadName',
+        'registerDeviceAndAccountKey',
+        'registerDeviceKey',
+        'authorizeDeviceKey',
+      ],
       sender: this._accountId,
     });
+    this._prepareKeys();
+
     this.setState({
       connected: true,
       signedIn: !!this._accountId,
       accountId: this._accountId,
-    })
-    if (this.state.signedIn) {
-      this._prepareDeviceKey()
-      await this._prepareAccountKey()
+      hasAccountKey: !!this._accountKey,
+    });
+
+    if (this.state.signedIn && !this.state.hasAccountKey) {
+      this._contract.accountKnown({account_id: this.state.accountId}).then(known_account => {
+        console.log("KNOWN ACCOUNT!", known_account)
+        if (!known_account) {
+          this._processNewAccount().then(() => {
+            this.reloadData();
+          })
+          .catch(console.error);
+        } else {
+          const deviceKey = new nacl.box.keyPair();
+          localStorage.setItem(deviceKeyName, Buffer.from(deviceKey.secretKey).toString('base64'));
+          this._deviceKey = deviceKey;
+          console.log('REQUEST ACCESS FOR DEVICE KEY ', this.state.deviceName, Buffer.from(deviceKey.publicKey).toString('base64'), deviceKey);
+          this._contract.registerDeviceKey({
+            device_name: this.state.deviceName,
+            device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
+          }, 1000000000000000).then(success => {
+            console.log("NEW DEVICE KEY!", success)
+            if (!success) {
+              throw new Error("Cannot register new device key");
+            }
+          })
+          .catch(console.error);
+        }
+      })
+      .catch(console.error);
     }
     this.reloadData();
   }
 
-  _prepareDeviceKey() {
-    const keyName = "near_chat_device_key";
-    let key = localStorage.getItem(keyName);
-    if (key) {
-      const buf = Buffer.from(key, 'base64');
+  _prepareKeys() {
+    let deviceKey = localStorage.getItem(deviceKeyName);
+    if (deviceKey) {
+      const buf = Buffer.from(deviceKey, 'base64');
       if (buf.length !== nacl.box.secretKeyLength) {
-        throw new Error("Given secret key has wrong length");
+        throw new Error("Stored device key has wrong length");
       }
-      key = nacl.box.keyPair.fromSecretKey(buf);
-    } else {
-      key = new nacl.box.keyPair();
-      localStorage.setItem(keyName, Buffer.from(key.secretKey).toString('base64'));
+      deviceKey = nacl.box.keyPair.fromSecretKey(buf);
+      this._deviceKey = deviceKey;
     }
-    this._deviceKey = key;
+
+    let accountKey = localStorage.getItem(accountKeyName);
+    if (accountKey) {
+      const buf = Buffer.from(accountKey, 'base64');
+      if (buf.length !== nacl.box.secretKeyLength) {
+        throw new Error("Stored account key has wrong length");
+      }
+      accountKey = nacl.box.keyPair.fromSecretKey(buf);
+      this._accountKey = accountKey;
+    }
   }
 
-  async _prepareAccountKey() {
-    const keyName = "near_chat_account_key";
-    let key = localStorage.getItem(keyName);
-    if (key) {
-      const buf = Buffer.from(key, 'base64');
-      if (buf.length !== nacl.box.secretKeyLength) {
-        throw new Error("Given secret key has wrong length");
-      }
-      key = nacl.box.keyPair.fromSecretKey(buf);
-    } else {
-      // TODO MOO get account key
-      key = new nacl.box.keyPair();
-      localStorage.setItem(keyName, Buffer.from(key.secretKey).toString('base64'));
+  async _processNewAccount() {
+    const accountKey = new nacl.box.keyPair();
+    localStorage.setItem(accountKeyName, Buffer.from(accountKey.secretKey).toString('base64'));
+    const deviceKey = new nacl.box.keyPair();
+    localStorage.setItem(deviceKeyName, Buffer.from(deviceKey.secretKey).toString('base64'));
+
+    /*const buf = Buffer.from(accountKey.secretKey);
+    const nonce = nacl.randomBytes(nacl.box.nonceLength);
+    const box = nacl.box(buf, nonce, deviceKey.publicKey, deviceKey.secretKey);
+
+    const fullBuf = new Uint8Array(box.length + nacl.box.nonceLength);
+    fullBuf.set(nonce);
+    fullBuf.set(box, nacl.box.nonceLength);
+    const encrypted_account_key = Buffer.from(fullBuf).toString('base64')*/
+
+    const encrypted_account_key = this.encryptBox(
+      Buffer.from(accountKey.secretKey).toString('base64'),
+      accountKey.secretKey,
+      deviceKey.publicKey
+    )
+
+    this._deviceKey = deviceKey
+    this._accountKey = accountKey
+
+    console.log(this.state.deviceName)
+    const success = await this._contract.registerDeviceAndAccountKey({
+      device_name: this.state.deviceName,
+      device_public_key: Buffer.from(deviceKey.publicKey).toString('base64'),
+      account_public_key: Buffer.from(accountKey.publicKey).toString('base64'),
+      encrypted_account_key,
+    })
+    console.log("NEW ACCOUNT!", success)
+    if (!success) {
+      throw new Error("Cannot create new account");
     }
-    this._accountKey = key;
-    this.setState({hasAccountKey: true})
   }
 
   isValidAccount(accountId) {
@@ -152,17 +234,18 @@ class App extends React.Component {
   }
 
   async requestSignOut() {
-    await this._walletAccount.signOut()
+    this._walletAccount.signOut()
     window.location.reload()
   }
 
   /**
   unbox encrypted messages with our secret key
   @param {string} msg64 encrypted message encoded as Base64
+  @param {Uint8Array} mySecretKey the secret key to use to unbox the message
   @param {Uint8Array} theirPublicKey the public key to use to verify the message
   @return {string} decoded contents of the box
   */
-  decryptBox(msg64, theirPublicKey64) {
+  decryptBox(msg64, mySecretKey, theirPublicKey64) {
     const theirPublicKey = Buffer.from(theirPublicKey64, 'base64');
     if (theirPublicKey.length !== nacl.box.publicKeyLength) {
       throw new Error("Given encryption public key is invalid.");
@@ -172,24 +255,25 @@ class App extends React.Component {
     buf.copy(nonce, 0, 0, nonce.length);
     const box = new Uint8Array(buf.length - nacl.box.nonceLength);
     buf.copy(box, 0, nonce.length);
-    const decodedBuf = nacl.box.open(box, nonce, theirPublicKey, this._key.secretKey);
+    const decodedBuf = nacl.box.open(box, nonce, theirPublicKey, mySecretKey);
     return Buffer.from(decodedBuf).toString()
   }
 
   /**
   box an unencrypted message with their public key and sign it with our secret key
   @param {string} str the message to wrap in a box
+  @param {Uint8Array} mySecretKey the secret key to use to sign the message
   @param {Uint8Array} theirPublicKey the public key to use to encrypt the message
   @returns {string} base64 encoded box of incoming message
   */
-  encryptBox(str, theirPublicKey64) {
+  encryptBox(str, mySecretKey, theirPublicKey64) {
     const theirPublicKey = Buffer.from(theirPublicKey64, 'base64');
     if (theirPublicKey.length !== nacl.box.publicKeyLength) {
       throw new Error("Given encryption public key is invalid.");
     }
     const buf = Buffer.from(str);
     const nonce = nacl.randomBytes(nacl.box.nonceLength);
-    const box = nacl.box(buf, nonce, theirPublicKey, this._key.secretKey);
+    const box = nacl.box(buf, nonce, theirPublicKey, mySecretKey);
 
     const fullBuf = new Uint8Array(box.length + nacl.box.nonceLength);
     fullBuf.set(nonce);
@@ -203,13 +287,7 @@ class App extends React.Component {
     document.getElementById('input').value = '';
     console.log(this._contract);
     // Calls the addMessage on the contract with arguments {text=text}.
-    this._contract.addMessage({channel: window.channel, thread_id: window.threadId.toString(), text})
-      .then(() => {
-        // Starting refresh animation
-        //$('#refresh-span').addClass(animateClass);
-        //refreshMessages();
-      })
-      .catch(console.error);
+    this._contract.addMessage({channel: window.channel, thread_id: window.threadId.toString(), text}).catch(console.error);
 
     window.pendingMsg = {
       'message_id': 1000000,
@@ -308,19 +386,80 @@ class App extends React.Component {
     );    
   }
 
+  async authorizeDeviceKey() {
+    let devicePublicKey = this.unauthorizedDeviceKey;
+    let buf = new Uint8Array(devicePublicKey.length);
+    buf.set(devicePublicKey);
+
+    const encryptedAccountKey = this.encryptBox(
+      Buffer.from(this._accountKey.secretKey).toString('base64'),
+      this._accountKey.secretKey,
+      buf
+    );
+
+    this.contract.authorizeDeviceKey({device_public_key: devicePublicKey, encrypted_account_key: encryptedAccountKey}).then(success => {
+      console.log("DEVICE AUTHORIZATION", success)
+      if (!success) {
+        throw new Error("Cannot authorize device key");
+      }
+    })
+    .catch(console.error);
+    this.unauthorizedDeviceKey = null;
+  }
 
   reloadData() {
-    this._contract.getAllThreads({}).then(threads => {
-      threads.forEach(thread => {
-        if (!window.threads.get(thread.thread_id)) {
-          window.threads.set(thread.thread_id, thread)
+    if (this.state.connected) {
+      if (this.state.signedIn) {
+        if (this.state.hasAccountKey) {
+          console.log("OLOLO", this._accountKey.secretKey, this._accountKey.publicKey, "OLOLO");
+          this._contract.getAnyUnauthorizedDeviceKey({account_id: this.state.accountId}).then(deviceKey => {
+            if (deviceKey !== "") {
+              console.log("##############", deviceKey)
+              this.unauthorizedDeviceKey = deviceKey;
+              this.refreshHeader();
+            }
+          })
+          .catch(console.error);
+        } else {
+          this._contract.getEncryptedAccountKey({
+            account_id: this.state.accountId,
+            device_public_key: Buffer.from(this._deviceKey.publicKey).toString('base64'),
+          }).then(encryptedAccountKey => {
+            if (encryptedAccountKey !== "") {
+              this._contract.getAccountPublicKey({account_id: this.state.accountId}).then(accountPublicKey => {
+                accountPublicKey = Buffer.from(accountPublicKey, 'base64');
+                let accountSecretKey = this.decryptBox(
+                  encryptedAccountKey,
+                  this._deviceKey.secretKey,
+                  accountPublicKey
+                )
+                accountSecretKey = Buffer.from(accountSecretKey, 'base64');
+                console.log("OLOLO1", accountSecretKey, accountPublicKey);
+                const accountKey = nacl.box.keyPair.fromSecretKey(accountSecretKey);
+                console.log("OLOLO2", accountKey.secretKey, accountKey.publicKey);
+                // TODO make sure and and save
+                //this._accountKey = accountKey
+                //this.setState({hasAccountKey: true})
+              })
+              .catch(console.error);
+            }
+          })
+          .catch(console.error);
         }
+      }
+      this._contract.getAllThreads({}).then(threads => {
+        threads.forEach(thread => {
+          if (!window.threads.get(thread.thread_id)) {
+            window.threads.set(thread.thread_id, thread)
+          }
+        })
+        console.log("HERE!!!");
+        this.refreshMessages();
+        this.refreshSources();
+        this.refreshHeader();
       })
-      console.log(threads);
-      this.refreshMessages();
-      this.refreshSources();
-      this.refreshHeader();
-    });
+      .catch(console.error);
+    }
   }
 
   render() {

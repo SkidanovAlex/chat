@@ -7,7 +7,7 @@ import { theme } from "../theme";
 const MessagesWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: flex-end;
   width: 100%;
   height: 100%;
 `
