@@ -420,7 +420,7 @@ class App extends React.Component {
             }
           })
           .catch(console.error);
-        } else {
+        } else if (this._deviceKey) {
           this._contract.getEncryptedAccountKey({
             account_id: this.state.accountId,
             device_public_key: Buffer.from(this._deviceKey.publicKey).toString('base64'),
