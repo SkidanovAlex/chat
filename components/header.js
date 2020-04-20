@@ -158,6 +158,11 @@ export default function Header({app}) {
             ) : (
               <Title>Limited Access</Title>
             )}
+            {app.unauthorizedDeviceKey ? (
+              <StatusElement>
+                <Button onClick={() => app.authorizeDeviceKey()}>Auth Device</Button>
+              </StatusElement>
+            ) : (null)}
             {app.state.signedIn ? (
               <StatusElement>
                 <StatusConnect onClick={() => app.requestSignOut()}>Sign Out</StatusConnect>
