@@ -8,7 +8,6 @@ import * as nacl from "tweetnacl";
 
 import Header from './components/header';
 import Chat from './components/chat';
-import Messages from './components/messages';
 import Footer from './components/footer';
 import Sources from './components/sources';
 
@@ -70,12 +69,13 @@ class App extends React.Component {
       ) : (
         deviceType + " " + osVersion + " " + browserName
       ),
+      messagesObj: null,
     }
+
+    this.messages = React.createRef();
     this.unauthorizedDeviceKey = null
-    window.messages = []
     window.channel = null
     window.threadId = 0
-    window.pendingMsg = null
     window.threads = new Map()
 
     console.log(this.state.deviceName)
@@ -283,24 +283,20 @@ class App extends React.Component {
     // Calls the addMessage on the contract with arguments {text=text}.
     this._contract.addMessage({channel: window.channel, thread_id: window.threadId.toString(), text}).catch(console.error);
 
-    window.pendingMsg = {
-      'message_id': 1000000,
-      'channel': window.channel,
-      'thread_id': window.threadId ? window.threadId : 1000000,
-      'sender': this.state.accountId,
-      'text': text
-    };
-    this.refreshMessages();
+    this.refreshMessages(text);
   }
 
-  refreshMessages() {
-    if (window.pendingMsg != null) {
-      window.messages.push(window.pendingMsg);
-      window.pendingMsg = null;
-      ReactDOM.render(
-        Messages(this),
-        document.getElementById('messages')
-      );
+  refreshMessages(pendingMsgText) {
+    if (pendingMsgText) {
+      let pendingMsg = {
+        'message_id': this.state.messagesObj.state.messages.length + 100,
+        'channel': window.channel,
+        'thread_id': window.threadId ? window.threadId : 1000000,
+        'sender': this.state.accountId,
+        'text': pendingMsgText,
+        'is_pending': true,
+      };
+      this.state.messagesObj.appendMessage(pendingMsg)
       var element = document.getElementById('messages_frame');
       element.scrollTo(0,9999);
     } else {
@@ -314,11 +310,7 @@ class App extends React.Component {
       }
     
       promise.then(messages => {
-        window.messages = messages;
-        ReactDOM.render(
-          Messages(this),
-          document.getElementById('messages')
-        );
+        this.state.messagesObj.updateMessages(messages)
         var element = document.getElementById('messages_frame');
         element.scrollTo(0,9999);
       })
@@ -329,7 +321,6 @@ class App extends React.Component {
   updateChannelThread(channel, threadId) {
     window.channel = channel;
     window.threadId = threadId;
-    window.pendingMsg = null;
     this.reloadData();
   }
 
@@ -364,6 +355,15 @@ class App extends React.Component {
         throw new Error("Cannot authorize device key");
       }
       this.unauthorizedDeviceKey = null;
+      this.reloadData()
+    })
+    .catch(console.error);
+  }
+
+  async createThread(message) {
+    this._contract.setThreadName({'channel': message.channel, 'thread_id': message.message_id.toString(), 'name': 'Unnamed Thread'}).then(() => {
+      console.log("THREAD CREATED", message);
+      window.threadId = message.message_id;
       this.reloadData()
     })
     .catch(console.error);
@@ -407,9 +407,7 @@ class App extends React.Component {
       }
       this._contract.getAllThreads({}).then(threads => {
         threads.forEach(thread => {
-          if (!window.threads.get(thread.thread_id)) {
-            window.threads.set(thread.thread_id, thread)
-          }
+          window.threads.set(thread.thread_id, thread)
         })
         this.refreshMessages();
         this.refreshSources();

@@ -35,7 +35,7 @@ export const RightFrame = styled.div`
   overflow-y: auto;
 `
 
-export default function Chat(app) {
+export default function Chat({app}) {
   return (
     <ChatFrame>
       <LeftFrame>

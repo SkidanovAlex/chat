@@ -49,8 +49,6 @@ export const theme = ({
   pizazzOrange: '#FF8F05',
   // yellows
   warningYellow: '#FFE270',
-  // pink
-  uniswapPink: '#FF585D',
   //green
   connectedGreen: '#27AE60',
 
@@ -114,7 +112,7 @@ export const Button = styled.button`
   border: none;
   outline: none;
   background-color: ${theme.royalBlue};
-  color: ${theme.nearBlack};
+  color: ${theme.white};
   width: 100%;
 
   :hover,

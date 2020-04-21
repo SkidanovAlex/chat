@@ -28,11 +28,11 @@ const Channel = styled.div`
   margin: 0.5rem;
   display: flex;
   align-items: center;
-  color: ${theme.uniswapPink};
+  color: ${theme.salmonRed};
 
   :hover {
     cursor: pointer;
-    color: ${darken(0.2, theme.uniswapPink)};
+    color: ${darken(0.2, theme.salmonRed)};
   }
 `
 
