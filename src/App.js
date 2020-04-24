@@ -70,13 +70,12 @@ class App extends React.Component {
         deviceType + " " + osVersion + " " + browserName
       ),
       messagesObj: null,
+      sourcesObj: null,
     }
+    // TODO put into this.state
+    this.threadsMap = new Map()
 
-    this.messages = React.createRef();
     this.unauthorizedDeviceKey = null
-    window.channel = null
-    window.threadId = 0
-    window.threads = new Map()
 
     console.log(this.state.deviceName)
   }
@@ -281,17 +280,24 @@ class App extends React.Component {
     let text = document.getElementById('input').value;
     document.getElementById('input').value = '';
     // Calls the addMessage on the contract with arguments {text=text}.
-    this._contract.addMessage({channel: window.channel, thread_id: window.threadId.toString(), text}).catch(console.error);
+    if (!!this.state.sourcesObj)
+    this._contract.addMessage({
+      channel: this.state.sourcesObj.state.currentChannel,
+      thread_id: this.state.sourcesObj.state.currentThreadId.toString(),
+      text}).catch(console.error);
 
     this.refreshMessages(text);
   }
 
   refreshMessages(pendingMsgText) {
+    const channel = this.state.sourcesObj.state.currentChannel;
+    const threadId = this.state.sourcesObj.state.currentThreadId;
+    const thread = this.threadsMap.get(threadId);
     if (pendingMsgText) {
       let pendingMsg = {
         'message_id': this.state.messagesObj.state.messages.length + 100,
-        'channel': window.channel,
-        'thread_id': window.threadId ? window.threadId : 1000000,
+        'channel': channel,
+        'thread_id': !!thread ? thread.thread_id : 1000000,
         'sender': this.state.accountId,
         'text': pendingMsgText,
         'is_pending': true,
@@ -301,10 +307,11 @@ class App extends React.Component {
       element.scrollTo(0,9999);
     } else {
       let promise;
-      if (window.threadId !== 0) {
-        promise = this._contract.getMessagesForThread({'channel': window.channel, 'thread_id': window.threadId.toString()});
-      } else if (window.channel != null) {
-        promise = this._contract.getMessagesForChannel({'channel': window.channel});
+      if (!!thread) {
+        console.log(thread)
+        promise = this._contract.getMessagesForThread({'channel': channel, 'thread_id': thread.thread_id.toString()});
+      } else if (channel != null) {
+        promise = this._contract.getMessagesForChannel({'channel': channel});
       } else {
         promise = this._contract.getAllMessages({});
       }
@@ -316,19 +323,6 @@ class App extends React.Component {
       })
       .catch(console.log);
     }
-  }
-
-  updateChannelThread(channel, threadId) {
-    window.channel = channel;
-    window.threadId = threadId;
-    this.reloadData();
-  }
-
-  refreshSources() {
-    ReactDOM.render(
-      Sources(this),
-      document.getElementById('sources')
-    );    
   }
 
   refreshHeader() {
@@ -363,13 +357,13 @@ class App extends React.Component {
   async createThread(message) {
     this._contract.setThreadName({'channel': message.channel, 'thread_id': message.message_id.toString(), 'name': 'Unnamed Thread'}).then(() => {
       console.log("THREAD CREATED", message);
-      window.threadId = message.message_id;
+      this.state.sourcesObj.setState({currentThreadId: message.message_id})
       this.reloadData()
     })
     .catch(console.error);
   }
 
-  reloadData() {
+  async reloadData() {
     if (this.state.connected) {
       if (this.state.signedIn) {
         if (this._accountKey) {
@@ -407,10 +401,10 @@ class App extends React.Component {
       }
       this._contract.getAllThreads({}).then(threads => {
         threads.forEach(thread => {
-          window.threads.set(thread.thread_id, thread)
+          this.threadsMap.set(thread.thread_id, thread)
         })
+        this.state.sourcesObj.setState({threads: threads})
         this.refreshMessages();
-        this.refreshSources();
         this.refreshHeader();
       })
       .catch(console.error);

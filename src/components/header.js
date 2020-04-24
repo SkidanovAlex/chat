@@ -116,12 +116,19 @@ const StatusElement = styled.div`
 `
 
 export default function Header({app}) {
-  let location = !window.channel ? (
+  if (!app.state.sourcesObj) {
+    // Not ready to render
+    return null;
+  }
+  const channel = app.state.sourcesObj.state.currentChannel
+  const threadId = app.state.sourcesObj.state.currentThreadId
+  console.log("AA", channel, threadId)
+  let location = !channel ? (
     "All messages"
-  ) : (!window.threadId ? (
-    window.channel
+  ) : (!threadId ? (
+    channel
   ) : (
-    window.channel + " » " + window.threads.get(window.threadId).name
+    channel + " » " + app.threadsMap.get(threadId).name
   ))
   return (
     <HeaderFrame id="header">

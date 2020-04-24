@@ -122,7 +122,6 @@ class Messages extends React.Component {
       channel: null,
       chosenMsg: null,
     }
-    this.createThreadRef = React.createRef();
   }
 
   componentDidMount() {
@@ -135,8 +134,6 @@ class Messages extends React.Component {
   }
 
   updateMessages(messages) {
-    console.log(messages)
-    console.log(window.threads)
     this.setState({messages: messages, chosenMsg: null})
   }
 
@@ -160,7 +157,7 @@ class Messages extends React.Component {
     console.log('changeThreadClick', message_id);
     for (var i = 0; i < this.state.messages.length; i++) {
       if (this.state.messages[i].message_id === message_id) {
-        this.state.app.updateChannelThread(this.state.messages[i].channel, this.state.messages[i].thread_id);
+        this.state.app.state.sourcesObj.updateChannelThreadId(this.state.messages[i].channel, this.state.messages[i].thread_id);
         break;
       }
     }
@@ -171,11 +168,12 @@ class Messages extends React.Component {
     const msg = this.state.chosenMsg
     this.state.app.createThread(msg)
     const thread = {thread_id: msg.message_id, channel: msg.channel, name: "Unnamed Thread"}
-    window.threads.set(msg.message_id, thread)
-    window.threadId = msg.message_id
-    window.channel = msg.channel
+    this.state.app.threadsMap.set(msg.message_id, thread)
+    this.state.app.state.sourcesObj.setState({
+      currentThreadId: msg.message_id,
+      currentChannel: msg.channel
+    })
     this.state.app.refreshHeader()
-    this.state.app.refreshSources()
     this.updateMessages([msg])
   }
 
@@ -221,7 +219,7 @@ class Messages extends React.Component {
       <MessagesWrapper>
         <EmptySpace/>
         {this.state.messages.map(msg => (
-          this.render_message(msg.message_id, msg.text, msg.sender, msg.channel, window.threads.get(msg.thread_id), msg.is_pending)
+          this.render_message(msg.message_id, msg.text, msg.sender, msg.channel, this.state.app.threadsMap.get(msg.thread_id), msg.is_pending)
         ))}
       </MessagesWrapper>
     )

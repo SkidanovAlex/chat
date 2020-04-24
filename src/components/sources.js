@@ -4,7 +4,7 @@ import { darken } from 'polished'
 
 import { theme } from "../theme";
 
-const SourcesFrame = styled.div`
+const SourcesWrapper = styled.div`
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
@@ -41,27 +41,54 @@ const Rule = styled.div`
   border: 0.5px solid ${theme.tokenRowHover};
 `
 
-export default function Sources(app) {
-  let channels = ['General', 'Staking', 'DevX'];
-  let threads = [];
-  for (const [key, value] of window.threads.entries()) {
-    threads.push(value)
+class Sources extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      app: props.app,
+      channels: ['General', 'Staking', 'DevX'],
+      threads: [],
+      currentChannel: null,
+      currentThreadId: null,
+    }
   }
-  return (
-    <SourcesFrame id="sources">
-      <Channel key="" onClick={() => {app.updateChannelThread(null, 0)}}>All messages</Channel>
-      <Rule/>
-      <SourceName>Channels</SourceName>
-      {channels.map(channel => (
-        <Channel key={channel} onClick={() => {app.updateChannelThread(channel, 0)}}>{channel}</Channel>
-      ))}
-      <Rule/>
-      <SourceName>Threads</SourceName>
-      {threads.map(thread => (
-        <Channel key={thread.thread_id} onClick={() => app.updateChannelThread(thread.channel, thread.thread_id)}>{thread.name}</Channel>
-      ))}
-      <Rule/>
-      <SourceName>Private</SourceName>
-    </SourcesFrame>
-  )
+
+  componentDidMount() {
+    this.state.app.setState({sourcesObj: this})
+  }
+
+  updateChannelThreadId(channel, threadId) {
+    this.state.app.reloadData();
+    this.setState({
+      currentChannel: channel,
+      currentThreadId: threadId,
+    });
+  }
+
+  render() {
+    if (!this.state.app.state.sourcesObj) {
+      // Not ready to render
+      return null;
+    }
+    return (
+      <SourcesWrapper>
+        <Channel key="" onClick={() => this.updateChannelThreadId(null, null)}>All messages</Channel>
+        <Rule/>
+        <SourceName>Channels</SourceName>
+        {this.state.channels.map(channel => (
+          <Channel key={channel} onClick={() => this.updateChannelThreadId(channel, null)}>{channel}</Channel>
+        ))}
+        <Rule/>
+        <SourceName>Threads</SourceName>
+        {this.state.threads.map(thread => (
+          <Channel key={thread.thread_id} onClick={() => this.updateChannelThreadId(thread.channel, thread.thread_id)}>{thread.name}</Channel>
+        ))}
+        <Rule/>
+        <SourceName>Private</SourceName>
+      </SourcesWrapper>
+    )
+  }
 }
+
+export default Sources;
