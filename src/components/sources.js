@@ -2,7 +2,7 @@ import React from 'react'
 import styled from 'styled-components'
 import { darken } from 'polished'
 
-import { Button, Input, theme } from "../theme";
+import { theme } from "../theme";
 
 const SourcesFrame = styled.div`
   display: flex;
@@ -28,11 +28,11 @@ const Channel = styled.div`
   margin: 0.5rem;
   display: flex;
   align-items: center;
-  color: ${theme.uniswapPink};
+  color: ${theme.salmonRed};
 
   :hover {
     cursor: pointer;
-    color: ${darken(0.2, theme.uniswapPink)};
+    color: ${darken(0.2, theme.salmonRed)};
   }
 `
 
@@ -47,7 +47,6 @@ export default function Sources(app) {
   for (const [key, value] of window.threads.entries()) {
     threads.push(value)
   }
-  console.log(threads);
   return (
     <SourcesFrame id="sources">
       <Channel key="" onClick={() => {app.updateChannelThread(null, 0)}}>All messages</Channel>

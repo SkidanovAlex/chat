@@ -1,10 +1,9 @@
 import React from 'react'
 import styled from 'styled-components'
-import { darken } from 'polished'
 
 import Sources from './sources';
 import Messages from './messages';
-import { theme, Button } from '../theme';
+import { theme } from '../theme';
 
 const ChatFrame = styled.div`
   display: flex;
@@ -36,7 +35,7 @@ export const RightFrame = styled.div`
   overflow-y: auto;
 `
 
-export default function Chat(app) {
+export default function Chat({app}) {
   return (
     <ChatFrame>
       <LeftFrame>

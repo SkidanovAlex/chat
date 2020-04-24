@@ -1,5 +1,5 @@
 import React from 'react'
-import styled, { css } from 'styled-components'
+import styled from 'styled-components'
 import { darken } from 'polished'
 
 import { theme, Link, Button, LeftFrame, RightFrame } from '../theme'
@@ -11,14 +11,6 @@ const HeaderFrame = styled.div`
   align-items: center;
   justify-content: space-between;
   width: 100%;
-`
-
-const HeaderElement = styled.div`
-  margin: 1.25rem;
-  display: flex;
-  min-width: 0;
-  display: flex;
-  align-items: center;
 `
 
 const Logo = styled.div`
@@ -153,11 +145,16 @@ export default function Header({app}) {
         </Title>
         {app.state.connected ? (
           <Status>
-            {app.state.hasAccountKey ? (
+            {app.state.signedIn && app._accountKey ? (
               <Title>Full Access</Title>
             ) : (
               <Title>Limited Access</Title>
             )}
+            {app.unauthorizedDeviceKey ? (
+              <StatusElement>
+                <Button onClick={() => app.authorizeDeviceKey()}>Auth Device</Button>
+              </StatusElement>
+            ) : (null)}
             {app.state.signedIn ? (
               <StatusElement>
                 <StatusConnect onClick={() => app.requestSignOut()}>Sign Out</StatusConnect>
