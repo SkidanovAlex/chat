@@ -27,8 +27,10 @@ export function addMessage(channel: u32, thread_id: u64, message_key_id: u32, te
 
   allMessages.push(message);
 
-  let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
-  threads.set(thread_id, thread);
+  if (thread_id == msg_id) {
+    let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
+    threads.set(thread_id, thread);
+  }
 
   let channelMessageIds = new PersistentVector<u32>(getChannelCollectionName(channel));
   channelMessageIds.push(msg_id);
