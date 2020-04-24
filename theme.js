@@ -49,8 +49,6 @@ export const theme = ({
   pizazzOrange: '#FF8F05',
   // yellows
   warningYellow: '#FFE270',
-  // pink
-  uniswapPink: '#FF585D',
   //green
   connectedGreen: '#27AE60',
 
@@ -101,12 +99,15 @@ export const GlobalStyle = createGlobalStyle`
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   }
+
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 `
 
 
-export const Button = styled.button.attrs(({ warning }) => ({
-  backgroundColor: warning ? theme.salmonRed : theme.royalBlue
-}))`
+export const Button = styled.button`
   padding: 0.5rem 1.5rem 0.5rem 1.5rem;
   border-radius: 3rem;
   cursor: pointer;
@@ -115,17 +116,17 @@ export const Button = styled.button.attrs(({ warning }) => ({
   font-weight: 500;
   border: none;
   outline: none;
-  background-color: ${({ backgroundColor }) => backgroundColor};
-  color: ${theme.nearBlack};
+  background-color: ${theme.royalBlue};
+  color: ${theme.white};
   width: 100%;
 
   :hover,
   :focus {
-    background-color: ${({ backgroundColor }) => darken(0.05, backgroundColor)};
+    background-color: ${darken(0.05, theme.royalBlue)};
   }
 
   :active {
-    background-color: ${({ backgroundColor }) => darken(0.1, backgroundColor)};
+    background-color: ${darken(0.1, theme.royalBlue)};
   }
 
   :disabled {

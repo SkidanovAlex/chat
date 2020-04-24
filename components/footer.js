@@ -54,7 +54,7 @@ const Block = styled.div`
 
 export default function Sender({app}) {
   let onEnterPress = (e) => {
-    if(e.keyCode === 13 && e.shiftKey === false) {
+    if (e.keyCode === 13 && e.shiftKey === false) {
       e.preventDefault();
       app.submitMessage();
     }

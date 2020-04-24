@@ -1,5 +1,5 @@
 import React from 'react'
-import styled, { css } from 'styled-components'
+import styled from 'styled-components'
 import { darken } from 'polished'
 
 import { theme, Link, Button, LeftFrame, RightFrame } from '../theme'
@@ -11,14 +11,6 @@ const HeaderFrame = styled.div`
   align-items: center;
   justify-content: space-between;
   width: 100%;
-`
-
-const HeaderElement = styled.div`
-  margin: 1.25rem;
-  display: flex;
-  min-width: 0;
-  display: flex;
-  align-items: center;
 `
 
 const Logo = styled.div`
@@ -124,12 +116,19 @@ const StatusElement = styled.div`
 `
 
 export default function Header({app}) {
-  let location = !window.channel ? (
+  if (!app.state.sourcesObj) {
+    // Not ready to render
+    return null;
+  }
+  const channel = app.state.sourcesObj.state.currentChannel
+  const threadId = app.state.sourcesObj.state.currentThreadId
+  console.log("AA", channel, threadId)
+  let location = !channel ? (
     "All messages"
-  ) : (!window.threadId ? (
-    window.channel
+  ) : (!threadId ? (
+    channel
   ) : (
-    window.channel + " » " + window.threads.get(window.threadId).name
+    channel + " » " + app.threadsMap.get(threadId).name
   ))
   return (
     <HeaderFrame id="header">
