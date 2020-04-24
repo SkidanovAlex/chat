@@ -9,7 +9,6 @@ import * as nacl from "tweetnacl";
 import Header from './components/header';
 import Chat from './components/chat';
 import Footer from './components/footer';
-import Sources from './components/sources';
 
 const MinAccountIdLen = 2;
 const MaxAccountIdLen = 64;
@@ -283,7 +282,7 @@ class App extends React.Component {
     if (!!this.state.sourcesObj)
     this._contract.addMessage({
       channel: this.state.sourcesObj.state.currentChannel,
-      thread_id: this.state.sourcesObj.state.currentThreadId.toString(),
+      thread_id: this.state.sourcesObj.state.currentThreadId ? this.state.sourcesObj.state.currentThreadId.toString() : "0",
       text}).catch(console.error);
 
     this.refreshMessages(text);
@@ -358,6 +357,14 @@ class App extends React.Component {
     this._contract.setThreadName({'channel': message.channel, 'thread_id': message.message_id.toString(), 'name': 'Unnamed Thread'}).then(() => {
       console.log("THREAD CREATED", message);
       this.state.sourcesObj.setState({currentThreadId: message.message_id})
+      this.reloadData()
+    })
+    .catch(console.error);
+  }
+
+  async renameThread(channel, threadId, newName) {
+    this._contract.setThreadName({'channel': channel, 'thread_id': threadId.toString(), 'name': newName}).then(() => {
+      console.log("THREAD RENAMED", newName, channel, threadId);
       this.reloadData()
     })
     .catch(console.error);

@@ -102,16 +102,6 @@ const EmptySpace = styled.div`
   margin-top: auto !important;
 `
 
-const ThreadInput = styled.input`
-  white-space: nowrap;
-  padding: 0.2rem;
-  border-radius: 1px;
-  transition: 0.2s all ease-in-out;
-  font-size: 0.67rem;
-  min-width: 200px;
-  background-color: ${theme.annaGray2};
-`
-
 class Messages extends React.Component {
   constructor(props) {
     super(props);
