@@ -68,8 +68,10 @@ class App extends React.Component {
       ) : (
         deviceType + " " + osVersion + " " + browserName
       ),
+      fullAccess: false,
       messagesObj: null,
       sourcesObj: null,
+      footerObj: null,
     }
     // TODO put into this.state
     this.threadsMap = new Map()
@@ -81,6 +83,10 @@ class App extends React.Component {
 
   componentDidMount() {
     this._initNear()
+  }
+
+  componentDidUpdate() {
+    this.reloadData();
   }
 
   accountKeyName() {
@@ -134,14 +140,15 @@ class App extends React.Component {
       connected: true,
       signedIn: !!this._accountId,
       accountId: this._accountId,
+      fullAccess: !!this._accountKey,
     });
 
-    if (this.state.signedIn && !this._accountKey) {
+    if (this.state.signedIn && !this.state.fullAccess) {
       this._contract.accountKnown({account_id: this.state.accountId}).then(known_account => {
         console.log("KNOWN ACCOUNT!", known_account)
         if (!known_account) {
           this._processNewAccount().then(() => {
-            this.reloadData();
+            this.setState({fullAccess: !!this._accountKey});
           })
           .catch(console.error);
         } else {
@@ -158,7 +165,6 @@ class App extends React.Component {
       })
       .catch(console.error);
     }
-    this.reloadData();
   }
 
   _prepareKeys() {
@@ -373,7 +379,7 @@ class App extends React.Component {
   async reloadData() {
     if (this.state.connected) {
       if (this.state.signedIn) {
-        if (this._accountKey) {
+        if (this.state.fullAccess) {
           this._contract.getAnyUnauthorizedDeviceKey({account_id: this.state.accountId}).then(deviceKey => {
             if (deviceKey !== "") {
               console.log("UNAUTHORIZED KEY FOUND", deviceKey)
@@ -399,6 +405,7 @@ class App extends React.Component {
                 const accountKey = nacl.box.keyPair.fromSecretKey(accountSecretKey);
                 localStorage.setItem(this.accountKeyName(), Buffer.from(accountKey.secretKey).toString('base64'));
                 this._accountKey = accountKey
+                this.setState({fullAccess: !!this._accountKey});
               })
               .catch(console.error);
             }
@@ -411,7 +418,8 @@ class App extends React.Component {
         threads.forEach(thread => {
           this.threadsMap.set(thread.thread_id, thread)
         })
-        this.state.sourcesObj.setState({threads: threads})
+        this.state.sourcesObj.setState({threads: threads});
+        this.state.footerObj.resetSendStatus();
         this.refreshMessages();
         this.refreshHeader();
       })

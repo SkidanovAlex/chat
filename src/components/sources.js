@@ -74,6 +74,7 @@ const SourceRenameInput = styled.input`
   transition: 0.2s all ease-in-out;
   font-size: 0.9rem;
   width: 100%;
+  color: ${theme.mineshaftGray};
   background-color: ${darken(0.05, theme.annaGray2)};
 `
 

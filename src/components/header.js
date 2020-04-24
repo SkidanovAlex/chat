@@ -122,7 +122,6 @@ export default function Header({app}) {
   }
   const channel = app.state.sourcesObj.state.currentChannel
   const threadId = app.state.sourcesObj.state.currentThreadId
-  console.log("AA", channel, threadId)
   let location = !channel ? (
     "All messages"
   ) : (!threadId ? (
@@ -152,7 +151,7 @@ export default function Header({app}) {
         </Title>
         {app.state.connected ? (
           <Status>
-            {app.state.signedIn && app._accountKey ? (
+            {app.state.signedIn && app.state.fullAccess ? (
               <Title>Full Access</Title>
             ) : (
               <Title>Limited Access</Title>
