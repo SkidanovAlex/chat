@@ -407,6 +407,7 @@ class App extends React.Component {
         }
       }
       this._contract.getAllThreads({}).then(threads => {
+        console.log('THREADS', threads)
         threads.forEach(thread => {
           this.threadsMap.set(thread.thread_id, thread)
         })
