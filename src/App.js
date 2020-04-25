@@ -179,7 +179,7 @@ class App extends React.Component {
     } else {
       let promise;
       if (threadId !== null) {
-        promise = this.nearChat.getMessagesForThread(channelId, threadId);
+        promise = this.nearChat.getMessagesForThread(threadId);
       } else if (channelId !== null) {
         promise = this.nearChat.getMessagesForChannel(channelId);
       } else {

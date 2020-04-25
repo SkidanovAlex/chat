@@ -138,7 +138,11 @@ class Header extends React.Component {
     const threadId = app.state.currentThreadId
     let location = (channelId != null) ? (
       (threadId != null) ? (
-        app.channelsMap.get(channelId).channel_name + " » " + app.threadsMap.get(threadId).name
+        (app.threadsMap.get(threadId)) ? (
+          app.channelsMap.get(channelId).channel_name + " » " + app.threadsMap.get(threadId).name
+        ) : (
+          app.channelsMap.get(channelId).channel_name + " » " + "???" + threadId.toString() // TODO
+        )
       ) : (
         app.channelsMap.get(channelId).channel_name
       )

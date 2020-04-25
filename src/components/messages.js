@@ -48,7 +48,7 @@ const MessageData = styled.div`
 
 const Sender = styled.div`
   font-size: 1rem;
-  margin-right: 0.5rem;
+  margin-right: 0.25rem;
 `
 
 const Text = styled.div`
@@ -86,8 +86,7 @@ const MessageTitle = styled.div`
   font-size: 0.83rem;
 `
 
-const StartThread = styled.div`
-  text-decoration: underline;
+const Reply = styled.div`
   font-weight: 500;
   color: ${theme.salmonRed};
   font-size: 0.83rem;
@@ -143,50 +142,62 @@ class Messages extends React.Component {
   }
 
   changeThreadClick(message_id) {
-    console.log('changeThreadClick', message_id);
     for (var i = 0; i < this.state.messages.length; i++) {
       if (this.state.messages[i].message_id === message_id) {
-        this.state.app.state.sourcesObj.updateChannelThreadId(this.state.messages[i].channel, this.state.messages[i].thread_id);
+        this.state.app.state.sourcesObj.updateChannelThread(this.state.messages[i].channel_id, this.state.messages[i].thread_id);
         break;
       }
     }
   }
 
-  createThreadClick(e) {
+  replyClick(e) {
     e.stopPropagation();
     const msg = this.state.chosenMsg
-    const thread = {thread_id: msg.message_id, channel_id: msg.channel_id, name: msg.text}
-    this.state.app.threadsMap.set(msg.message_id, thread)
-    this.state.app.setState({
-      currentThreadId: msg.message_id,
-      currentChannelId: msg.channel_id
-    })
-    this.state.app.state.footerObj.forceUpdate();
-    //this.state.app.refreshHeader()
-    this.updateMessages([msg])
+    const thread = this.state.app.threadsMap.get(msg.thread_id)
+    // TODO use one setState
+    if (!!thread) {
+      this.state.app.setState({
+        currentChannelId: thread.channel_id,
+        currentThreadId: thread.thread_id,
+        renamingThread: false,
+      });
+    } else {
+      this.state.app.setState({
+        currentChannelId: msg.channel_id,
+        currentThreadId: msg.message_id,
+        renamingThread: false,
+      })
+    }
   }
 
-  renderMessage(message_id, text, sender, channel, thread, is_pending) {
-    const is_chosen = (!!this.state.chosenMsg) ? (message_id === this.state.chosenMsg.message_id) : false;
+  renderMessage(message, isPending) {
+    const messageId = message.message_id;
+    const sender = message.sender;
+    const channelName = message.channel;
+    const threadName = message.thread;
+    const text = message.text;
+    const isChosen = (!!this.state.chosenMsg) ? (messageId === this.state.chosenMsg.message_id) : false;
+    const inThread = !!threadName || messageId !== message.thread_id;
+    const threadText = !!threadName ? (threadName) : (message.thread_name);
     return (
-      <MessageWrapper is_chosen={is_chosen} key={message_id} onClick={() => this.messageClick(message_id)}>
+      <MessageWrapper is_chosen={isChosen} key={messageId} onClick={() => this.messageClick(messageId)}>
         <MessageHeader>
           <MessageTitle>
             <Sender>{sender}</Sender>
-            <Channel>{channel}</Channel>
-            {is_pending ? (
-              <Pending onClick={e => this.refresh(e)}>Pending...</Pending>
+            {inThread ? (
+              <ThreadName onClick={() => this.changeThreadClick(messageId)}>» {threadText}</ThreadName>
             ) : (
-              null
-            )}
-            {!!thread ? (
-              <ThreadName onClick={() => this.changeThreadClick(message_id)}>{thread.name}</ThreadName>
-            ) : (
-              is_chosen && !is_pending ? (
-                <StartThread onClick={e => this.createThreadClick(e)}>Start a thread</StartThread>
+              isChosen && !isPending ? (
+                <Reply onClick={e => this.replyClick(e)}>Reply</Reply>
               ) : (
                 null
               )
+            )}
+            {/*<Channel>{channelName}</Channel>*/}
+            {isPending ? (
+              <Pending onClick={e => this.refresh(e)}>Pending...</Pending>
+            ) : (
+              null
             )}
           </MessageTitle>
         </MessageHeader>
@@ -209,7 +220,7 @@ class Messages extends React.Component {
       <MessagesWrapper>
         <EmptySpace/>
         {this.state.messages.map(msg => (
-          this.renderMessage(msg.message_id, msg.text, msg.sender, msg.channel, this.state.app.threadsMap.get(msg.thread_id), msg.is_pending)
+          this.renderMessage(msg, msg.is_pending)
         ))}
       </MessagesWrapper>
     )
