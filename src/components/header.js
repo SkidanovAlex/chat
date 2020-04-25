@@ -2,8 +2,10 @@ import React from 'react'
 import styled from 'styled-components'
 import { darken } from 'polished'
 
-import { theme, Link, Button, LeftFrame, RightFrame } from '../theme'
+import { theme, Link, Button, LeftFrame, RightFrame, ThreadAction, ThreadName, ThreadRenameInput } from '../theme'
 import logo from '../logo_white.png';
+import imgRename from '../rename.png';
+import imgAccept from '../accept.png';
 
 const HeaderWrapper = styled.div`
   background-color: ${theme.annaGray};
@@ -37,10 +39,15 @@ const Logo = styled.div`
   }
 `
 
+const Location = styled.div`
+  display: flex;
+  align-items: center;
+`
+
 const Title = styled.div`
   display: flex;
   align-items: center;
-  margin: 0.5rem 0.5rem 0.5rem 0;
+  margin: 0.5rem;
 
   :hover {
     cursor: pointer;
@@ -133,22 +140,31 @@ class Header extends React.Component {
       // Not ready to render
       return null;
     }
+
+    let onInputPressEnter = (e) => {
+      if (e.keyCode === 13 && e.shiftKey === false) {
+        e.preventDefault();
+        this.state.app.renameThread(e);
+      }
+    }
+
     const app = this.state.app
     const channelId = app.state.currentChannelId
     const threadId = app.state.currentThreadId
-    let location = (channelId != null) ? (
-      (threadId != null) ? (
-        (app.threadsMap.get(threadId)) ? (
-          app.channelsMap.get(channelId).channel_name + " » " + app.threadsMap.get(threadId).name
-        ) : (
-          app.channelsMap.get(channelId).channel_name + " » " + "???" + threadId.toString() // TODO
-        )
-      ) : (
-        app.channelsMap.get(channelId).channel_name
-      )
+    const channelName = (channelId !== null) ? (
+      app.channelsMap.get(channelId).channel_name
     ) : (
       "All messages"
     )
+    const threadName = (threadId !== null) ? (
+      (app.threadsMap.get(threadId)) ? (
+        app.threadsMap.get(threadId).name
+      ) : (
+        "Unnamed Thread"
+      )
+    ) : (null)
+    const isShowRename = threadId !== null && !app.state.renamingThread;
+    const isShowAccept = threadId !== null && app.state.renamingThread;
     return (
       <HeaderWrapper>
         <LeftFrame>
@@ -166,9 +182,22 @@ class Header extends React.Component {
           </Logo>
         </LeftFrame>
         <RightFrame>
-          <Title>
-            {location}
-          </Title>
+          <Location>
+            <Title>
+              {channelName}
+            </Title>
+            {isShowAccept ? (
+              <ThreadRenameInput id="thread_rename_input" onKeyDown={(e) => onInputPressEnter(e)}/>
+            ) : (
+              <ThreadName>{threadName}</ThreadName>
+            )}
+            {isShowRename ? (
+              <ThreadAction onClick={e => this.state.app.startRenaming(e)}><img src={imgRename} width="16" height="16" alt="rename"/></ThreadAction>
+            ) : (null)}
+            {isShowAccept ? (
+              <ThreadAction onClick={e => this.state.app.renameThread(e)}><img src={imgAccept} width="16" height="16" alt="rename"/></ThreadAction>
+            ) : (null)}
+          </Location>
           {app.state.connected ? (
             <Status>
               {app.state.signedIn && app.state.fullAccess ? (

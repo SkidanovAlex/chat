@@ -101,6 +101,11 @@ class App extends React.Component {
 
   componentDidUpdate() {
     console.log("RELOAD DATA!", this.state)
+    if (this.state.renamingThread) {
+      let input = document.getElementById("thread_rename_input");
+      input.value = this.threadsMap.get(this.state.currentThreadId) ? this.threadsMap.get(this.state.currentThreadId).name : "";
+      input.focus();
+    }
     this.reloadData();
   }
 
@@ -140,6 +145,28 @@ class App extends React.Component {
       }
     })
     .catch(console.error);
+  }
+
+  async startRenaming(e) {
+    e.stopPropagation();
+    this.setState({
+      renamingThread: true,
+    });
+  }
+
+  async renameThread(e) {
+    e.stopPropagation();
+    let input = document.getElementById("thread_rename_input");
+    const newName = input.value;
+    const channelId = this.state.currentChannelId;
+    const threadId = this.state.currentThreadId;
+    this.nearChat.setThreadName(channelId, threadId, newName);
+    const thread = {channel_id: channelId, thread_id: threadId, name: newName}
+    // TODO it updates the data after setState
+    this.threadsMap.set(threadId, thread)
+    this.setState({
+      renamingThread: false,
+    })
   }
 
   /*async createThread(message) {

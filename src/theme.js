@@ -215,3 +215,33 @@ export const RightFrame = styled.div`
   width: 80%;
   height: 100%;
 `
+
+export const ThreadRenameInput = styled.input`
+  white-space: nowrap;
+  margin-right: 0.5rem;
+  padding: 0;
+  border-radius: 0px;
+  border-width: 0px;
+  border: none;
+  transition: 0.2s all ease-in-out;
+  font-size: 0.9rem;
+  width: 100%;
+  color: ${theme.mineshaftGray};
+  background-color: ${darken(0.05, theme.annaGray2)};
+`
+
+export const ThreadAction = styled.div`
+  font-size: 0rem;
+  :hover {
+    cursor: pointer;
+  }
+`
+
+export const ThreadName = styled.div`
+  color: ${theme.salmonRed};
+  font-size: 0.9rem;
+  :hover {
+    cursor: default;
+    color: ${darken(0.2, theme.salmonRed)};
+  }
+`

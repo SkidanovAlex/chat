@@ -174,10 +174,10 @@ class Messages extends React.Component {
     const messageId = message.message_id;
     const sender = message.sender;
     const channelName = message.channel;
-    const threadName = message.thread;
+    const threadName = message.thread_name;
     const text = message.text;
     const isChosen = (!!this.state.chosenMsg) ? (messageId === this.state.chosenMsg.message_id) : false;
-    const inThread = !!threadName || messageId !== message.thread_id;
+    const inThread = threadName !== message.text;
     const threadText = !!threadName ? (threadName) : (message.thread_name);
     return (
       <MessageWrapper is_chosen={isChosen} key={messageId} onClick={() => this.messageClick(messageId)}>

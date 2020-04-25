@@ -277,6 +277,14 @@ class NearChat {
   async getMessagesForThread(threadId) {
     return this.contract.getMessagesForThread({thread_id: threadId.toString()})
   }
+
+  async setThreadName(channelId, threadId, name) {
+    return this.contract.setThreadName({
+      channel_id: channelId.toString(),
+      thread_id: threadId.toString(),
+      name
+    })
+  }
 }
 
 export default NearChat;

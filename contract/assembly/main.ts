@@ -102,8 +102,8 @@ export function getThreadName(thread_id: u64): String {
   return threads.get(thread_id)!.name;
 }
 
-export function setThreadName(channel: u64, thread_id: u64, name: string): void {
-  let thread = new Thread(channel, thread_id, '!' + name);
+export function setThreadName(channel_id: u64, thread_id: u64, name: string): void {
+  let thread = new Thread(channel_id, thread_id, '!' + name);
   let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
   let allThreadIds = new PersistentVector<u64>(getCollectionName("all_named_threads"));
 
