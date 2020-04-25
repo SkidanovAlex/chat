@@ -271,12 +271,11 @@ class NearChat {
   }
 
   async getMessagesForChannel(channelId) {
-    console.log("!!!", channelId)
     return this.contract.getMessagesForChannel({channel_id: channelId})
   }
 
   async getMessagesForThread(threadId) {
-    return this.contract.getMessagesForChannel({thread_id: threadId.toString()})
+    return this.contract.getMessagesForThread({thread_id: threadId.toString()})
   }
 }
 
