@@ -59,16 +59,11 @@ class Footer extends React.Component {
 
     this.state = {
       app: props.app,
-      sendDisabled: true,
     }
   }
 
   componentDidMount() {
     this.state.app.setState({footerObj: this})
-  }
-
-  resetSendStatus() {
-    this.setState({sendDisabled: !this.state.app.state.signedIn || !this.state.app.state.sourcesObj.state.currentChannel})
   }
 
   render() {
@@ -77,8 +72,10 @@ class Footer extends React.Component {
       return null;
     }
 
+    const disabled = !this.state.app.state.signedIn || this.state.app.state.currentChannelId === null
+
     let onEnterPress = (e) => {
-      if (e.keyCode === 13 && e.shiftKey === false && !this.state.sendDisabled) {
+      if (e.keyCode === 13 && e.shiftKey === false && !disabled) {
         e.preventDefault();
         this.state.app.submitMessage();
       }
@@ -93,7 +90,7 @@ class Footer extends React.Component {
         <RightFrame>
           <Input type="text" id="input" placeholder="Enter your message here" onKeyDown={(e) => onEnterPress(e)}/>
           <Title>
-            <Button disabled={this.state.sendDisabled} onClick={() => this.state.app.submitMessage()}>Send</Button>
+            <Button disabled={disabled} onClick={() => this.state.app.submitMessage()}>Send</Button>
           </Title>
         </RightFrame>
       </FooterWrapper>

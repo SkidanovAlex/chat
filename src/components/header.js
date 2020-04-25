@@ -5,7 +5,7 @@ import { darken } from 'polished'
 import { theme, Link, Button, LeftFrame, RightFrame } from '../theme'
 import logo from '../logo_white.png';
 
-const HeaderFrame = styled.div`
+const HeaderWrapper = styled.div`
   background-color: ${theme.annaGray};
   display: flex;
   align-items: center;
@@ -115,71 +115,90 @@ const StatusElement = styled.div`
   margin: 0.5rem 0.5rem 0.5rem 0;
 `
 
-export default function Header({app}) {
-  if (!app.state.sourcesObj) {
-    // Not ready to render
-    return null;
+class Header extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      app: props.app,
+    }
   }
-  const channel = app.state.sourcesObj.state.currentChannel
-  const threadId = app.state.sourcesObj.state.currentThreadId
-  let location = !channel ? (
-    "All messages"
-  ) : (!threadId ? (
-    channel
-  ) : (
-    channel + " » " + app.threadsMap.get(threadId).name
-  ))
-  return (
-    <HeaderFrame id="header">
-      <LeftFrame>
-        <Logo>
-          <Link id="link" href="https://nearprotocol.com">
-            <LogoFrame>
-              <LogoElement>
-              <img src={logo} width="22" height="22" alt="logo"/>
-              </LogoElement>
-              <LogoElement>
-              <h1 id="title">NEAR Chat!</h1>
-              </LogoElement>
-            </LogoFrame>
-          </Link>
-        </Logo>
-      </LeftFrame>
-      <RightFrame>
-        <Title>
-          {location}
-        </Title>
-        {app.state.connected ? (
-          <Status>
-            {app.state.signedIn && app.state.fullAccess ? (
-              <Title>Full Access</Title>
-            ) : (
-              <Title>Limited Access</Title>
-            )}
-            {app.unauthorizedDeviceKey ? (
+
+  componentDidMount() {
+    this.state.app.setState({headerObj: this})
+  }
+
+  render() {
+    if (!this.state.app.state.headerObj) {
+      // Not ready to render
+      return null;
+    }
+    const app = this.state.app
+    const channelId = app.state.currentChannelId
+    const threadId = app.state.currentThreadId
+    let location = (channelId != null) ? (
+      (threadId != null) ? (
+        app.channelsMap.get(channelId).channel_name + " » " + app.threadsMap.get(threadId).name
+      ) : (
+        app.channelsMap.get(channelId).channel_name
+      )
+    ) : (
+      "All messages"
+    )
+    return (
+      <HeaderWrapper>
+        <LeftFrame>
+          <Logo>
+            <Link id="link" href="https://nearprotocol.com">
+              <LogoFrame>
+                <LogoElement>
+                  <img src={logo} width="22" height="22" alt="logo"/>
+                </LogoElement>
+                <LogoElement>
+                  <h1 id="title">NEAR Chat!</h1>
+                </LogoElement>
+              </LogoFrame>
+            </Link>
+          </Logo>
+        </LeftFrame>
+        <RightFrame>
+          <Title>
+            {location}
+          </Title>
+          {app.state.connected ? (
+            <Status>
+              {app.state.signedIn && app.state.fullAccess ? (
+                <Title>Full Access</Title>
+              ) : (
+                <Title>Limited Access</Title>
+              )}
+              {app.unauthorizedDeviceKey ? (
+                <StatusElement>
+                  <Button onClick={() => app.authorizeDeviceKey()}>Auth Device</Button>
+                </StatusElement>
+              ) : (null)}
+              {app.state.signedIn ? (
+                <StatusElement>
+                  <StatusConnect onClick={() => app.requestSignOut()}>Sign Out</StatusConnect>
+                </StatusElement>
+              ) : (
+                <StatusElement>
+                  <Button onClick={() => app.requestSignIn()}>Log In</Button>
+                </StatusElement>
+              )}
+            </Status>
+          ) : (
+            <Status>
+              <Title>No Access</Title>
               <StatusElement>
-                <Button onClick={() => app.authorizeDeviceKey()}>Auth Device</Button>
+                <StatusConnect onClick={() => window.location.reload()}>Connecting...</StatusConnect>
               </StatusElement>
-            ) : (null)}
-            {app.state.signedIn ? (
-              <StatusElement>
-                <StatusConnect onClick={() => app.requestSignOut()}>Sign Out</StatusConnect>
-              </StatusElement>
-            ) : (
-              <StatusElement>
-                <Button onClick={() => app.requestSignIn()}>Log In</Button>
-              </StatusElement>
-            )}
-          </Status>
-        ) : (
-          <Status>
-            <Title>No Access</Title>
-            <StatusElement>
-              <StatusConnect onClick={() => window.location.reload()}>Connecting...</StatusConnect>
-            </StatusElement>
-          </Status>
-        )}
-      </RightFrame>
-    </HeaderFrame>
-  )
+            </Status>
+          )}
+        </RightFrame>
+      </HeaderWrapper>
+    )
+  }
 }
+
+export default Header;

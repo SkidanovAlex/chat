@@ -109,7 +109,6 @@ class Messages extends React.Component {
     this.state = {
       app: props.app,
       messages: [],
-      channel: null,
       chosenMsg: null,
     }
   }
@@ -156,17 +155,18 @@ class Messages extends React.Component {
   createThreadClick(e) {
     e.stopPropagation();
     const msg = this.state.chosenMsg
-    const thread = {thread_id: msg.message_id, channel: msg.channel, name: msg.text}
+    const thread = {thread_id: msg.message_id, channel_id: msg.channel_id, name: msg.text}
     this.state.app.threadsMap.set(msg.message_id, thread)
-    this.state.app.state.sourcesObj.setState({
+    this.state.app.setState({
       currentThreadId: msg.message_id,
-      currentChannel: msg.channel
+      currentChannelId: msg.channel_id
     })
-    this.state.app.refreshHeader()
+    this.state.app.state.footerObj.forceUpdate();
+    //this.state.app.refreshHeader()
     this.updateMessages([msg])
   }
 
-  render_message(message_id, text, sender, channel, thread, is_pending) {
+  renderMessage(message_id, text, sender, channel, thread, is_pending) {
     const is_chosen = (!!this.state.chosenMsg) ? (message_id === this.state.chosenMsg.message_id) : false;
     return (
       <MessageWrapper is_chosen={is_chosen} key={message_id} onClick={() => this.messageClick(message_id)}>
@@ -209,7 +209,7 @@ class Messages extends React.Component {
       <MessagesWrapper>
         <EmptySpace/>
         {this.state.messages.map(msg => (
-          this.render_message(msg.message_id, msg.text, msg.sender, msg.channel, this.state.app.threadsMap.get(msg.thread_id), msg.is_pending)
+          this.renderMessage(msg.message_id, msg.text, msg.sender, msg.channel, this.state.app.threadsMap.get(msg.thread_id), msg.is_pending)
         ))}
       </MessagesWrapper>
     )

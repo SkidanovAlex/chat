@@ -1,8 +1,7 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import styled from "styled-components";
 
-import Contract from './contract'
+import NearChat from './contract'
 import Header from './components/header';
 import Chat from './components/chat';
 import Footer from './components/footer';
@@ -49,42 +48,50 @@ class App extends React.Component {
       signedIn: false,
       accountId: null,
       fullAccess: false,
+
+      currentChannelId: null,
+      currentThreadId: null,
+      renamingThread: false,
+
       messagesObj: null,
       sourcesObj: null,
+      headerObj: null,
       footerObj: null,
     }
     // TODO put into this.state
+    this.channelsMap = new Map()
     this.threadsMap = new Map()
 
+    // TODO remove it
     this.unauthorizedDeviceKey = null
   }
 
   componentDidMount() {
-    this.contract = new Contract()
-    this.contract.initNear().then(() => {
+    this.nearChat = new NearChat()
+    this.nearChat.initNear().then(() => {
 
-      this.contract.initKeys();
+      this.nearChat.initKeys();
 
       this.setState({
         connected: true,
-        signedIn: !!this.contract.accountId,
-        accountId: this.contract.accountId,
-        fullAccess: !!this.contract.accountKey,
+        signedIn: !!this.nearChat.accountId,
+        accountId: this.nearChat.accountId,
+        fullAccess: !!this.nearChat.accountKey,
       });
 
       if (this.state.signedIn && !this.state.fullAccess) {
-        this.contract.accountKnown().then(known_account => {
+        this.nearChat.accountKnown().then(known_account => {
           console.log("KNOWN ACCOUNT!", known_account)
           if (!known_account) {
-            this.contract.processNewAccount().then(() => {
+            this.nearChat.processNewAccount().then(() => {
               console.log("NEW ACCOUNT!")
-              if (!!this.contract.accountKey) {
+              if (!!this.nearChat.accountKey) {
                 this.setState({fullAccess: true})
               }
             })
             .catch(console.error);
           } else {
-            this.contract.registerDeviceKey()
+            this.nearChat.registerDeviceKey()
           }
         })
         .catch(console.error);
@@ -98,79 +105,35 @@ class App extends React.Component {
   }
 
   requestSignIn() {
-    this.contract.signIn()
+    this.nearChat.signIn()
   }
 
   requestSignOut() {
-    this.contract.signOut()
+    this.nearChat.signOut()
     window.location.reload()
   }
 
-  // Submits a new message to the devnet
-  /*submitMessage() {
+  submitMessage() {
     let text = document.getElementById('input').value;
     document.getElementById('input').value = '';
-    // Calls the addMessage on the contract with arguments {text=text}.
     if (!!this.state.sourcesObj)
-      this._contract.addMessage({
-        channel: this.state.sourcesObj.state.currentChannel,
-        thread_id: this.state.sourcesObj.state.currentThreadId ? this.state.sourcesObj.state.currentThreadId.toString() : "0",
+      this.nearChat.addMessage(
+        this.state.currentChannelId,
+        this.state.currentThreadId,
         text
-      })
-      .catch(console.error);
-
-    this.refreshMessages(text);
-  }*/
-
-  /*refreshMessages(pendingMsgText) {
-    const channel = this.state.sourcesObj.state.currentChannel;
-    const threadId = this.state.sourcesObj.state.currentThreadId;
-    const thread = this.threadsMap.get(threadId);
-    if (pendingMsgText) {
-      let pendingMsg = {
-        'message_id': this.state.messagesObj.state.messages.length + 100,
-        'channel': channel,
-        'thread_id': !!thread ? thread.thread_id : 1000000,
-        'sender': this.state.accountId,
-        'text': pendingMsgText,
-        'is_pending': true,
-      };
-      this.state.messagesObj.appendMessage(pendingMsg)
-      var element = document.getElementById('messages_frame');
-      element.scrollTo(0,9999);
-    } else {
-      let promise;
-      if (!!thread) {
-        console.log(thread)
-        promise = this._contract.getMessagesForThread({'channel': channel, 'thread_id': thread.thread_id.toString()});
-      } else if (channel != null) {
-        promise = this._contract.getMessagesForChannel({'channel': channel});
-      } else {
-        promise = this._contract.getAllMessages({});
-      }
-    
-      promise.then(messages => {
-        this.state.messagesObj.updateMessages(messages)
-        var element = document.getElementById('messages_frame');
-        element.scrollTo(0,9999);
+      ).then(() => {
+        this.reloadData();
       })
       .catch(console.log);
-    }
-  }*/
-
-  refreshHeader() {
-    ReactDOM.render(
-      Header({app: this}),
-      document.getElementById('header')
-    );    
+    this.reloadMessages(text);
   }
 
   async authorizeDeviceKey() {
     const deviceKey = this.unauthorizedDeviceKey;
     this.unauthorizedDeviceKey = null;
-    this.refreshHeader();
+    this.state.headerObj.forceUpdate();
     console.log('RECEIVED DEVICE PUBLIC KEY', deviceKey);
-    this.contract.authorizeDeviceKey(deviceKey).then(success => {
+    this.nearChat.authorizeDeviceKey(deviceKey).then(success => {
       console.log("DEVICE AUTHORIZATION", success)
       if (!success) {
         throw new Error("Cannot authorize device key");
@@ -196,22 +159,56 @@ class App extends React.Component {
     .catch(console.error);
   }*/
 
+  async reloadMessages(pendingMsgText) {
+    const channelId = this.state.currentChannelId;
+    const threadId = this.state.currentThreadId;
+    // TODO
+    if /*(pendingMsgText)*/ (false) {
+      /*let pendingMsg = {
+        'message_id': this.state.messages.length + 100,
+        'channel': channel,
+        'thread_id': !!thread ? thread.thread_id : 1000000,
+        'sender': this.state.accountId,
+        'text': pendingMsgText,
+        'is_pending': true,
+      };*/
+      // TODO
+      //this.state.messagesObj.appendMessage(pendingMsg)
+      var element = document.getElementById('messages_frame');
+      element.scrollTo(0,9999);
+    } else {
+      let promise;
+      if (threadId !== null) {
+        promise = this.nearChat.getMessagesForThread(channelId, threadId);
+      } else if (channelId !== null) {
+        promise = this.nearChat.getMessagesForChannel(channelId);
+      } else {
+        promise = this.nearChat.getAllMessages();
+      }
+    
+      promise.then(messages => {
+        this.state.messagesObj.updateMessages(messages)
+        var element = document.getElementById('messages_frame');
+        element.scrollTo(0,9999);
+      })
+      .catch(console.log);
+    }
+  }
+
   async reloadAccess() {
     if (this.state.connected && this.state.signedIn) {
       if (this.state.fullAccess) {
-        this.contract.getAnyUnauthorizedDeviceKey().then(deviceKey => {
+        this.nearChat.getAnyUnauthorizedDeviceKey().then(deviceKey => {
           if (deviceKey !== "") {
             console.log("UNAUTHORIZED KEY FOUND", deviceKey)
             this.unauthorizedDeviceKey = deviceKey;
-            this.refreshHeader();
+            this.state.headerObj.forceUpdate();
           }
         })
         .catch(console.error);
       } else {
-        console.log("HERE?", this.state.fullAccess)
-        await this.contract.upgradeToFullAccess();
-        console.log("UPGRADED?")
-        if (!!this.contract.accountKey) {
+        await this.nearChat.upgradeToFullAccess();
+        if (!!this.nearChat.accountKey) {
           this.setState({fullAccess: true})
         }
       }
@@ -219,37 +216,26 @@ class App extends React.Component {
   }
 
   async reloadData() {
+    if (!this.state.connected) {
+      // not ready to reload
+      return;
+    }
     this.reloadAccess()
-    this.refreshHeader()
-    /*if (this.state.connected) {
-      if (this.state.signedIn) {
-        if (this.state.fullAccess) {
-          this.contract.getAnyUnauthorizedDeviceKey().then(deviceKey => {
-            if (deviceKey !== "") {
-              console.log("UNAUTHORIZED KEY FOUND", deviceKey)
-              this.unauthorizedDeviceKey = deviceKey;
-              this.refreshHeader();
-            }
-          })
-          .catch(console.error);
-        } else {
-          this.contract.upgradeToFullAccess().then(success => {
-            this.setState({fullAccess: success});
-          })
-        }
-      }
-      this._contract.getAllThreads({}).then(threads => {
-        console.log('THREADS', threads)
-        threads.forEach(thread => {
-          this.threadsMap.set(thread.thread_id, thread)
-        })
-        this.state.sourcesObj.setState({threads: threads});
-        this.state.footerObj.resetSendStatus();
-        this.refreshMessages();
-        this.refreshHeader();
+    this.reloadMessages()
+    if (this.state.connected) {
+      const threads = await this.nearChat.getAllThreads();
+      this.threadsMap.clear()
+      threads.forEach(thread => {
+        this.threadsMap.set(thread.thread_id, thread)
       })
-      .catch(console.error);
-    }*/
+      const channels = await this.nearChat.getChannels();
+      this.channelsMap.clear()
+      channels.forEach(channel => {
+        this.channelsMap.set(channel.channel_id, channel)
+      })
+      // TODO remove
+      this.state.sourcesObj.forceUpdate();
+    }
   }
 
   render() {

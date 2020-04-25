@@ -2,19 +2,7 @@
 import { context, logging, PersistentVector, PersistentMap } from "near-sdk-as";
 import { PostedMessage, Thread, DeviceKey, getChannelCollectionName, getThreadCollectionName, getDeviceKeysCollectionName, getCollectionName, getSecretKeysVectorName, getSecretKeysMapName, getChannelsVectorName, Channel, ChannelNameIdAndKey, RetrievedMessage, ChannelNameIdAndKey } from './model';
 
-function _getChannelsCollection(): PersistentVector<Channel> {
-  let all_channels = new PersistentVector<Channel>(getCollectionName("all_channels"));
-
-  if (all_channels.length == 0) {
-    createPublicChannel("General");
-    createPublicChannel("DevX");
-    createPublicChannel("Staking");
-  }
-
-  return all_channels;
-}
-
-export function addMessage(channel: u32, thread_id: u64, message_key_id: u32, text: string): void {
+export function addMessage(channel_id: u64, thread_id: u64, message_key_id: u64, text: string): void {
   let allMessages = new PersistentVector<PostedMessage>(getCollectionName("messages"));
   let msg_id = allMessages.length;
 
@@ -22,8 +10,8 @@ export function addMessage(channel: u32, thread_id: u64, message_key_id: u32, te
     thread_id = msg_id;
   }
 
-  let message = new PostedMessage(msg_id, context.sender, text, thread_id, message_key_id, channel);
-  let thread  = new Thread(channel, thread_id, text);
+  let message = new PostedMessage(msg_id, context.sender, text, thread_id, message_key_id, channel_id);
+  let thread  = new Thread(channel_id, thread_id, text);
 
   allMessages.push(message);
 
@@ -32,21 +20,21 @@ export function addMessage(channel: u32, thread_id: u64, message_key_id: u32, te
     threads.set(thread_id, thread);
   }
 
-  let channelMessageIds = new PersistentVector<u32>(getChannelCollectionName(channel));
+  let channelMessageIds = new PersistentVector<u64>(getChannelCollectionName(channel_id));
   channelMessageIds.push(msg_id);
 
-  let threadMessageIds = new PersistentVector<u32>(getThreadCollectionName(thread_id));
+  let threadMessageIds = new PersistentVector<u64>(getThreadCollectionName(thread_id));
   threadMessageIds.push(msg_id);
 }
 
 function _annotateMessage(message: PostedMessage): RetrievedMessage {
   let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
-  let all_channels = _getChannelsCollection();
+  let all_channels = new PersistentVector<Channel>(getCollectionName("all_channels"));
 
-  let encrypted_message_secret_keys = new PersistentMap<u32, string>(getSecretKeysMapName(message.sender));
+  let encrypted_message_secret_keys = new PersistentMap<u64, string>(getSecretKeysMapName(message.sender));
 
   let thread_text = threads.contains(message.thread_id) ? threads.get(message.thread_id)!.name : "";
-  let channel_name = (message.channel_id < (all_channels.length as u32)) ? all_channels[message.channel_id].channel_name : "";
+  let channel_name = (message.channel_id < (all_channels.length as u64)) ? all_channels[message.channel_id as u32].channel_name : "";
 
   let message_text = message.text;
   let message_key = "";
@@ -72,27 +60,27 @@ function _annotateMessage(message: PostedMessage): RetrievedMessage {
   )
 }
 
-export function getMessagesForThread(channel: u32, thread_id: u64): Array<RetrievedMessage> {
+export function getMessagesForThread(thread_id: u64): Array<RetrievedMessage> {
   let allMessages = new PersistentVector<PostedMessage>(getCollectionName("messages"));
-  let threadMessageIds = new PersistentVector<u32>(getThreadCollectionName(thread_id));
+  let threadMessageIds = new PersistentVector<u64>(getThreadCollectionName(thread_id));
 
   let ret = new Array<RetrievedMessage>();
   
   for (let i = 0; i < threadMessageIds.length; ++i) {
-    let posted_message = allMessages[threadMessageIds[i]];
+    let posted_message = allMessages[threadMessageIds[i] as u32];
     ret.push(_annotateMessage(posted_message));
   }
   return ret;
 }
 
-export function getMessagesForChannel(channel: u32): Array<RetrievedMessage> {
+export function getMessagesForChannel(channel_id: u64): Array<RetrievedMessage> {
   let allMessages = new PersistentVector<PostedMessage>(getCollectionName("messages"));
-  let channelMessageIds = new PersistentVector<u32>(getChannelCollectionName(channel));
+  let channelMessageIds = new PersistentVector<u64>(getChannelCollectionName(channel_id));
 
   let ret = new Array<RetrievedMessage>();
   
   for (let i = 0; i < channelMessageIds.length; ++i) {
-    let posted_message = allMessages[channelMessageIds[i]];
+    let posted_message = allMessages[channelMessageIds[i] as u32];
     ret.push(_annotateMessage(posted_message));
   }
   return ret;
@@ -114,7 +102,7 @@ export function getThreadName(thread_id: u64): String {
   return threads.get(thread_id)!.name;
 }
 
-export function setThreadName(channel: u32, thread_id: u64, name: string): void {
+export function setThreadName(channel: u64, thread_id: u64, name: string): void {
   let thread = new Thread(channel, thread_id, '!' + name);
   let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
   let allThreadIds = new PersistentVector<u64>(getCollectionName("all_named_threads"));
@@ -249,7 +237,7 @@ export function createPrivateChannel(channel_name: string, accounts: string[], m
   }
 
   let all_message_public_keys = new PersistentVector<string>(getCollectionName("all_message_public_keys"));
-  let all_channels = _getChannelsCollection();
+  let all_channels = new PersistentVector<Channel>(getCollectionName("all_channels"));
 
   if (all_message_public_keys.length == 0) {
     all_message_public_keys.push(""); // 0th key refers to no encryption
@@ -263,9 +251,9 @@ export function createPrivateChannel(channel_name: string, accounts: string[], m
 
   for (let i = 0; i < accounts.length; ++ i) {
     let account_id = accounts[i];
-    let encrypted_message_secret_keys = new PersistentMap<u32, string>(getSecretKeysMapName(account_id));
-    let encrypted_mesasge_secret_keys_indexes = new PersistentVector<u32>(getSecretKeysVectorName(account_id));
-    let channels = new PersistentVector<u32>(getChannelsVectorName(account_id));
+    let encrypted_message_secret_keys = new PersistentMap<u64, string>(getSecretKeysMapName(account_id));
+    let encrypted_mesasge_secret_keys_indexes = new PersistentVector<u64>(getSecretKeysVectorName(account_id));
+    let channels = new PersistentVector<u64>(getChannelsVectorName(account_id));
 
     encrypted_mesasge_secret_keys_indexes.push(key_id);
     encrypted_message_secret_keys.set(key_id, encrypted_message_keys[i]);
@@ -275,15 +263,31 @@ export function createPrivateChannel(channel_name: string, accounts: string[], m
   return true;
 }
 
-export function getAccountChannels(account_id: string): Array<ChannelNameIdAndKey> {
-  let channels = new PersistentVector<u32>(getChannelsVectorName(account_id));
+export function getChannels(account_id: string): Array<ChannelNameIdAndKey> {
+  let all_channels = new PersistentVector<Channel>(getCollectionName("all_channels"));
+
+  let ret = new Array<ChannelNameIdAndKey>();
+
+  for (let i = 0; i < all_channels.length; ++ i) {
+    let channel = all_channels[i];
+
+    if (channel.message_key_id == 0) {
+      ret.push(new ChannelNameIdAndKey(channel.channel_name, i as u64, channel.message_key_id, ""));
+    }
+  }
+
+  return ret;
+}
+
+export function getGroups(account_id: string): Array<ChannelNameIdAndKey> {
+  let channels = new PersistentVector<u64>(getChannelsVectorName(account_id));
   let all_channels = new PersistentVector<Channel>(getCollectionName("all_channels"));
 
   let ret = new Array<ChannelNameIdAndKey>();
 
   for (let i = 0; i < channels.length; ++ i) {
-    let encrypted_message_secret_keys = new PersistentMap<u32, string>(getSecretKeysMapName(account_id));
-    let channel = all_channels[channels[i]];
+    let encrypted_message_secret_keys = new PersistentMap<u64, string>(getSecretKeysMapName(account_id));
+    let channel = all_channels[channels[i] as u32];
 
     if (encrypted_message_secret_keys.contains(channel.message_key_id)) {
       ret.push(new ChannelNameIdAndKey(channel.channel_name, channels[i], channel.message_key_id, encrypted_message_secret_keys.get(channel.message_key_id)!));
@@ -293,7 +297,7 @@ export function getAccountChannels(account_id: string): Array<ChannelNameIdAndKe
   return ret;
 }
 
-export function getChannel(channel_id: u32): Channel {
+export function getChannel(channel_id: u64): Channel {
   let all_channels = new PersistentVector<Channel>(getCollectionName("all_channels"));
-  return all_channels[channel_id];
+  return all_channels[channel_id as u32];
 }

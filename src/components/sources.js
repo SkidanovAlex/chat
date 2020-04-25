@@ -83,12 +83,7 @@ class Sources extends React.Component {
     super(props);
 
     this.state = {
-      app: props.app,
-      channels: ['General', 'Staking', 'DevX'],
-      threads: [],
-      currentChannel: null,
-      currentThreadId: null,
-      renamingThread: false,
+      app: props.app
     }
   }
 
@@ -97,20 +92,21 @@ class Sources extends React.Component {
   }
 
   componentDidUpdate() {
-    if (this.state.renamingThread) {
+    const app = this.state.app
+    if (app.state.renamingThread) {
       let input = document.getElementById("source_rename_input");
-      input.value = this.state.app.threadsMap.get(this.state.currentThreadId).name;
+      input.value = app.threadsMap.get(app.state.currentThreadId).name;
       input.focus();
     }
   }
 
-  updateChannelThreadId(channel, threadId) {
-    if (this.state.currentChannel === channel && this.state.currentThreadId === threadId) {
+  updateChannelThread(channelId, threadId) {
+    const app = this.state.app
+    if (app.state.currentChannelId === channelId && app.state.currentThreadId === threadId) {
       return;
     }
-    this.state.app.reloadData();
-    this.setState({
-      currentChannel: channel,
+    app.setState({
+      currentChannelId: channelId,
       currentThreadId: threadId,
       renamingThread: false,
     });
@@ -118,18 +114,20 @@ class Sources extends React.Component {
 
   startRenaming(e) {
     e.stopPropagation();
-    this.setState({
+    this.state.app.setState({
       renamingThread: true,
     });
   }
 
   renameThread(e) {
     e.stopPropagation();
+    const app = this.state.app
     let input = document.getElementById("source_rename_input");
     const newName = input.value;
-    const channel = this.state.currentChannel;
-    const threadId = this.state.currentThreadId;
-    let thread = this.state.app.threadsMap.get(threadId);
+    const channelId = app.state.currentChannelId;
+    const threadId = app.state.currentThreadId;
+    // TODO
+    /*let thread = app.threadsMap.get(threadId);
     thread.name = newName;
     this.state.app.threadsMap.set(threadId, thread);
     this.state.app.refreshHeader()
@@ -137,35 +135,35 @@ class Sources extends React.Component {
     this.state.app.renameThread(channel, threadId, newName);
     this.setState({
       renamingThread: false,
-    });
+    });*/
   }
 
-  render_source(channel, threadId, text) {
+  renderSource(channelId, threadId, text) {
     let onInputPressEnter = (e) => {
       if (e.keyCode === 13 && e.shiftKey === false) {
         e.preventDefault();
         this.renameThread(e);
       }
     }
-
-    const is_chosen = this.state.currentChannel === channel && this.state.currentThreadId === threadId;
-    const is_show_rename = is_chosen && threadId && !this.state.renamingThread;
-    const is_show_accept = is_chosen && threadId && this.state.renamingThread;
+    const app = this.state.app
+    const isChosen = app.state.currentChannelId === channelId && app.state.currentThreadId === threadId;
+    const isShowRename = isChosen && threadId && !app.state.renamingThread;
+    const isShowAccept = isChosen && threadId && app.state.renamingThread;
     return (
       <SourceWrapper
-        key={channel + (!!threadId ? threadId.toString() : null)}
-        is_chosen={is_chosen}
-        onClick={() => this.updateChannelThreadId(channel, threadId)}
+        key={(!!channelId ? channelId.toString() : "") + "~" + (!!threadId ? threadId.toString() : "")}
+        is_chosen={isChosen}
+        onClick={() => this.updateChannelThread(channelId, threadId)}
       >
-        {is_show_accept ? (
+        {isShowAccept ? (
           <SourceRenameInput id="source_rename_input" onKeyDown={(e) => onInputPressEnter(e)}/>
         ) : (
           <SourceName>{text}</SourceName>
         )}
-        {is_show_rename ? (
+        {isShowRename ? (
           <SourceAction onClick={e => this.startRenaming(e)}><img src={imgRename} width="16" height="16" alt="rename"/></SourceAction>
         ) : (null)}
-        {is_show_accept ? (
+        {isShowAccept ? (
           <SourceAction onClick={e => this.renameThread(e)}><img src={imgAccept} width="16" height="16" alt="rename"/></SourceAction>
         ) : (null)}
       </SourceWrapper>
@@ -177,15 +175,21 @@ class Sources extends React.Component {
       // Not ready to render
       return null;
     }
+    const app = this.state.app
+    console.log('CHANNELS', app.channelsMap);
+    let channels = [];
+    app.channelsMap.forEach(channel => channels.push(channel));
+    let threads = [];
+    app.threadsMap.forEach(thread => threads.push(thread));
     return (
       <SourcesWrapper>
-        {this.render_source(null, null, "All messages")}
+        {this.renderSource(null, null, "All messages")}
         <Rule/>
         <SourceHeader>Channels</SourceHeader>
-        {this.state.channels.map(channel => this.render_source(channel, null, channel))}
+        {channels.map(channel => this.renderSource(channel.channel_id, null, channel.channel_name))}
         <Rule/>
         <SourceHeader>Threads</SourceHeader>
-        {this.state.threads.map(thread => this.render_source(thread.channel, thread.thread_id, thread.name))}
+        {threads.map(thread => this.renderSource(thread.channel, thread.thread_id, thread.name))}
         <Rule/>
         <SourceHeader>Private</SourceHeader>
       </SourcesWrapper>

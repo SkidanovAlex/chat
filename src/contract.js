@@ -14,7 +14,7 @@ const MinAccountIdLen = 2;
 const MaxAccountIdLen = 64;
 const ValidAccountRe = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
 
-class ChatContract {
+class NearChat {
   constructor() {
     console.log("CONSTRUCT THE CONTRACT")
   }
@@ -46,7 +46,7 @@ class ChatContract {
         'getAnyUnauthorizedDeviceKey',
         'getAccountPublicKey',
         'getEncryptedAccountKey',
-        'getAccountChannels',
+        'getChannels',
         'getChannel',
       ],
       changeMethods: [
@@ -243,6 +243,41 @@ class ChatContract {
       console.log("ACCOUNT KEY ADDED");
     }
   }
+
+  async getAllThreads() {
+    return this.contract.getAllThreads({})
+  }
+
+  async getChannels() {
+    return this.contract.getChannels({account_id: this.accountId})
+  }
+
+  async createPublicChannel(channelName) {
+    return this.contract.createPublicChannel({channel_name: channelName})
+  }
+
+  // TODO use message_key_id
+  async addMessage(channelId, threadId, text) {
+    return this.contract.addMessage({
+      channel_id: channelId,
+      thread_id: threadId == null ? "0" : threadId.toString(),
+      message_key_id: "0",
+      text,
+    })
+  }
+
+  async getAllMessages() {
+    return this.contract.getAllMessages({})
+  }
+
+  async getMessagesForChannel(channelId) {
+    console.log("!!!", channelId)
+    return this.contract.getMessagesForChannel({channel_id: channelId})
+  }
+
+  async getMessagesForThread(threadId) {
+    return this.contract.getMessagesForChannel({thread_id: threadId.toString()})
+  }
 }
 
-export default ChatContract;
+export default NearChat;

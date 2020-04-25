@@ -1,7 +1,7 @@
 // @nearfile
 import { storage } from 'near-sdk-as';
 
-const PROTOCOL_VERSION = "30";
+const PROTOCOL_VERSION = "31";
 
 
 export class PostedMessage {
@@ -11,8 +11,8 @@ export class PostedMessage {
     public sender: string,
     public text: string,
     public thread_id: u64,
-    public message_key_id: u32,
-    public channel_id: u32){}
+    public message_key_id: u64,
+    public channel_id: u64){}
 
 }
 
@@ -24,9 +24,9 @@ export class RetrievedMessage {
     public text: string,
     public thread_id: u64,
     public thread_name: string,
-    public message_key_id: u32,
+    public message_key_id: u64,
     public message_key: string,
-    public channel_id: u32,
+    public channel_id: u64,
     public channel: string){}
 
 }
@@ -36,7 +36,7 @@ export const THREAD_NAME_PREFIX = "!";
 export class Thread {
 
   constructor(
-    public channel: u32,
+    public channel_id: u64,
     public thread_id: u64,
     public name: string){}
 
@@ -56,7 +56,7 @@ export class Channel {
   constructor(
     public channel_name: string,
     public accounts: string[],
-    public message_key_id: u32){}
+    public message_key_id: u64){}
 
 }
 
@@ -64,12 +64,12 @@ export class ChannelNameIdAndKey {
 
   constructor(
     public channel_name: string,
-    public channel_id: u32,
-    public message_key_id: u32,
+    public channel_id: u64,
+    public message_key_id: u64,
     public message_key: string){}
 }
 
-export function getChannelCollectionName(channel: u32): string {
+export function getChannelCollectionName(channel: u64): string {
     return "CHANNEL" + PROTOCOL_VERSION + ":" + channel.toString();
 }
 
