@@ -156,8 +156,7 @@ class Messages extends React.Component {
   createThreadClick(e) {
     e.stopPropagation();
     const msg = this.state.chosenMsg
-    this.state.app.createThread(msg)
-    const thread = {thread_id: msg.message_id, channel: msg.channel, name: "Unnamed Thread"}
+    const thread = {thread_id: msg.message_id, channel: msg.channel, name: msg.text}
     this.state.app.threadsMap.set(msg.message_id, thread)
     this.state.app.state.sourcesObj.setState({
       currentThreadId: msg.message_id,
@@ -205,6 +204,7 @@ class Messages extends React.Component {
       // Not ready to render
       return null;
     }
+    console.log("MSG", this.state.messages)
     return (
       <MessagesWrapper>
         <EmptySpace/>

@@ -1,7 +1,7 @@
 // @nearfile
 import { storage } from 'near-sdk-as';
 
-const PROTOCOL_VERSION = "22";
+const PROTOCOL_VERSION = "30";
 
 
 export class PostedMessage {

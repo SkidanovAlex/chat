@@ -2,7 +2,7 @@
 import { context, logging, PersistentVector, PersistentMap } from "near-sdk-as";
 import { PostedMessage, Thread, DeviceKey, getChannelCollectionName, getThreadCollectionName, getDeviceKeysCollectionName, getCollectionName, getSecretKeysVectorName, getSecretKeysMapName, getChannelsVectorName, Channel, ChannelNameIdAndKey, RetrievedMessage, ChannelNameIdAndKey } from './model';
 
-function getChannelsCollection(): PersistentVector<Channel> {
+function _getChannelsCollection(): PersistentVector<Channel> {
   let all_channels = new PersistentVector<Channel>(getCollectionName("all_channels"));
 
   if (all_channels.length == 0) {
@@ -39,9 +39,9 @@ export function addMessage(channel: u32, thread_id: u64, message_key_id: u32, te
   threadMessageIds.push(msg_id);
 }
 
-function annotateMessage(message: PostedMessage): RetrievedMessage {
+function _annotateMessage(message: PostedMessage): RetrievedMessage {
   let threads = new PersistentMap<u64, Thread>(getCollectionName("threads"));
-  let all_channels = getChannelsCollection();
+  let all_channels = _getChannelsCollection();
 
   let encrypted_message_secret_keys = new PersistentMap<u32, string>(getSecretKeysMapName(message.sender));
 
@@ -80,7 +80,7 @@ export function getMessagesForThread(channel: u32, thread_id: u64): Array<Retrie
   
   for (let i = 0; i < threadMessageIds.length; ++i) {
     let posted_message = allMessages[threadMessageIds[i]];
-    ret.push(annotateMessage(posted_message));
+    ret.push(_annotateMessage(posted_message));
   }
   return ret;
 }
@@ -93,7 +93,7 @@ export function getMessagesForChannel(channel: u32): Array<RetrievedMessage> {
   
   for (let i = 0; i < channelMessageIds.length; ++i) {
     let posted_message = allMessages[channelMessageIds[i]];
-    ret.push(annotateMessage(posted_message));
+    ret.push(_annotateMessage(posted_message));
   }
   return ret;
 }
@@ -104,7 +104,7 @@ export function getAllMessages(): Array<RetrievedMessage> {
   let ret = new Array<RetrievedMessage>();
   
   for (let i = 0; i < allMessages.length; ++ i) {
-    ret.push(annotateMessage(allMessages[i]));
+    ret.push(_annotateMessage(allMessages[i]));
   }
   return ret;
 }
@@ -249,7 +249,7 @@ export function createPrivateChannel(channel_name: string, accounts: string[], m
   }
 
   let all_message_public_keys = new PersistentVector<string>(getCollectionName("all_message_public_keys"));
-  let all_channels = getChannelsCollection();
+  let all_channels = _getChannelsCollection();
 
   if (all_message_public_keys.length == 0) {
     all_message_public_keys.push(""); // 0th key refers to no encryption

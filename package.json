@@ -14,8 +14,8 @@
     "polished": "^3.3.2",
     "react": "^16.13.1",
     "react-device-detect": "^1.11.14",
-    "react-dom": "^16.13.1",
     "react-scripts": "3.4.1",
+    "react-dom": "^16.13.1",
     "styled-components": "^4.2.0"
   },
   "scripts": {
@@ -24,9 +24,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "build": "cd contract; node asconfig.js",
-    "deploy:contract": "near deploy --wasmFile contract/out/main.wasm --keyPath contract/neardev/default/studio-vvs2k3876.json",
+    "deploy:contract": "yarn run build && near deploy --wasmFile contract/out/main.wasm --keyPath contract/neardev/default/studio-vvs2k3876.json",
     "deploy:pages": "gh-pages -d src",
-    "deploy": "yarn run build && yarn run deploy:contract && yarn run deploy:pages"
+    "deploy": "yarn run deploy:contract && yarn run deploy:pages"
   },
   "eslintConfig": {
     "extends": "react-app"
