@@ -7,8 +7,9 @@ import * as nacl from "tweetnacl";
 
 const ContractName = 'studio-vvs2k3876';
 const AppTitle = 'NEAR Guest Book';
-const AccountKeyNamePrefix = "near_chat_account_key test123456789";
-const DeviceKeyNamePrefix = "near_chat_device_key test123456789";
+const AccountKeyNamePrefix = "near_chat_account_key test1234567890";
+const DeviceKeyNamePrefix = "near_chat_device_key test1234567890";
+const GroupKeyNamePrefix = "near_chat_group_key test ";
 const GasTransaction = 1000000000000000;
 const MinAccountIdLen = 2;
 const MaxAccountIdLen = 64;
@@ -89,6 +90,10 @@ class NearChat {
     return AccountKeyNamePrefix + this.accountId
   }
 
+  groupKeyName(groupId) {
+    return GroupKeyNamePrefix + groupId.toString()
+  }
+
   isValidAccount(accountId) {
     return accountId.length >= MinAccountIdLen &&
         accountId.length <= MaxAccountIdLen &&
@@ -167,6 +172,45 @@ class NearChat {
     }
   }
 
+  async updateGroupKey(groupId) {
+    let groupKey = localStorage.getItem(this.groupKeyName(groupId));
+    if (!groupKey) {
+      let encryptedGroupSecretKey = await this.contract.getGroupKey({account_id: this.accountId, group_id: groupId})
+      encryptedGroupSecretKey = Buffer.from(encryptedGroupSecretKey, 'base64');
+      const groupSecretKey = this.decryptBox(
+        encryptedGroupSecretKey,
+        this.accountKey.secretKey,
+        "123" // use Group Public Key
+      )
+      groupSecretKey = Buffer.from(groupSecretKey, 'base64');
+      localStorage.setItem(this.groupKeyName(groupId), Buffer.from(groupSecretKey).toString('base64'));
+    }
+  }
+
+  encryptMessage(groupId, msg) {
+    let groupKey = localStorage.getItem(this.groupKeyName(groupId));
+    if (!groupKey) {
+      return msg
+    }
+    return this.encryptBox(
+      msg,
+      groupKey.secretKey,
+      "123"
+    )
+  }
+
+  decryptMessage(groupId, msg) {
+    let groupKey = localStorage.getItem(this.groupKeyName(groupId));
+    if (!groupKey) {
+      return msg
+    }
+    return this.decryptBox(
+      msg,
+      groupKey.secretKey,
+      "123"
+    )
+  }
+
   async processNewAccount() {
     const accountKey = new nacl.box.keyPair();
     localStorage.setItem(this.accountKeyName(), Buffer.from(accountKey.secretKey).toString('base64'));
@@ -227,7 +271,6 @@ class NearChat {
       account_id: this.accountId,
       device_public_key: Buffer.from(this.deviceKey.publicKey).toString('base64'),
     })
-    console.log("AAA", encryptedAccountKey);
     if (encryptedAccountKey !== "") {
       let accountPublicKey = await this.contract.getAccountPublicKey({account_id: this.accountId});
       accountPublicKey = Buffer.from(accountPublicKey, 'base64');
