@@ -122,10 +122,13 @@ class App extends React.Component {
     let text = document.getElementById('input').value;
     document.getElementById('input').value = '';
     if (!!this.state.sourcesObj)
+      text = this.nearChat.encryptMessage(this.state.currentChannelId, text)
+      // what is message_key_id?
       this.nearChat.addMessage(
         this.state.currentChannelId,
         this.state.currentThreadId,
-        text
+        //message_key_id,
+        text,
       ).then(() => {
         this.reloadData();
       })
@@ -212,13 +215,16 @@ class App extends React.Component {
       } else {
         promise = this.nearChat.getAllMessages();
       }
-    
-      promise.then(messages => {
-        this.state.messagesObj.updateMessages(messages)
-        var element = document.getElementById('messages_frame');
-        element.scrollTo(0,9999);
-      })
-      .catch(console.log);
+      let messages = await promise;
+      for (let i = 0; i < messages.length; ++i) {
+        if (messages[i].message_key !== "") {
+          await this.nearChat.updateGroupKey(messages[i].channel_id);
+          messages[i].text = this.nearChat.decryptMessage(messages[i].channel_id, messages[i].text);
+        }
+      }
+      this.state.messagesObj.updateMessages(messages)
+      var element = document.getElementById('messages_frame');
+      element.scrollTo(0,9999);
     }
   }
 
