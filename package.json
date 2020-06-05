@@ -9,7 +9,7 @@
     "assemblyscript": "^0.9.4",
     "jest": "^24.8.0",
     "jest-environment-node": "^24.8.0",
-    "near-sdk-as": "^0.2.0",
+    "near-sdk-as": "^0.4.0",
     "near-shell": "^0.18.0",
     "polished": "^3.3.2",
     "react": "^16.13.1",
