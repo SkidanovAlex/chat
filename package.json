@@ -6,7 +6,7 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
-    "assemblyscript": "^0.9.4",
+    "assemblyscript": "^0.10.1",
     "jest": "^24.8.0",
     "jest-environment-node": "^24.8.0",
     "near-sdk-as": "^0.2.0",
